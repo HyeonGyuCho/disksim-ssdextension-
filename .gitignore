@@ -1,0 +1,6 @@
+*.outv
+*.o
+*.a
+*.d
+lib
+include
