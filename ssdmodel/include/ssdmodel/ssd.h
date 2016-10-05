@@ -24,7 +24,7 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_MAX_ELEMS_PER_GANG      SSD_MAX_ELEMENTS// if you're changing this, do change the following bits too
 #define SSD_BITS_ELEMS_PER_GANG     8
 
-#define PN_SSD                      
+//#define PN_SSD                      
 
 #ifdef PN_SSD
 #define PCM_TYPE                    1
@@ -317,7 +317,7 @@ typedef struct _ssd_timing_params {
 
     double pcm_read_latency;            // time to read a page into pcm chip register
     double pcm_write_latency;           // time to write a page from pcm chip register
-    double pcm_block_ratio;             // PCM block ratio over total capacity
+    double pcm_blocks;                  // PCM blocks over total capacity
 
     int     write_policy;               // policy followed when writing a block
                                         // follow the above definitions

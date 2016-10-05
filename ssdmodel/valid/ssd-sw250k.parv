@@ -180,7 +180,7 @@ ssdmodel_ssd SSD {
 
      Page size = 8,
 
-     Pages per block = 64,
+     Pages per block = 192,
 
      # vp - changing the no of blocks from 16184 to 16384
      Blocks per element = 16384,
@@ -210,15 +210,18 @@ ssdmodel_ssd SSD {
      # vp changing the Chip xfer latency from per sector to per byte
      Chip xfer latency = 0.000025,
 
-     Page read latency = 0.025,
-     Page write latency = 0.200,
-     Block erase latency = 1.5,
+#     Page read latency = 0.025,
+#     Page write latency = 0.200,
+#     Block erase latency = 1.5,
 
-     Pcm read latency = 0.0001,
-     Pcm write latency = 0.001,
-     Pcm block ratio = 0.2
+     Page read latency = 0.088,
+     Page write latency = 0.350,
+     Block erase latency = 10,
+
+     Pcm read latency = 0.00256,
+     Pcm write latency = 0.320,
+     Pcm block percentage = 20
 }  # end of SSD spec
-
 
 # component instantiation
 instantiate [ simfoo ]         as  Sim

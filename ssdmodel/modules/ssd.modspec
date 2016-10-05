@@ -134,9 +134,9 @@ INIT result->params.pcm_write_latency = d;
 This specifies the time taken to write a pcm page from the package
 register into the flash memory (in ms).
 
-PARAM Pcm block ratio		D	1
+PARAM Pcm block percentage		D	1
 TEST (d >= 0)
-INIT result->params.pcm_block_ratio = d;
+INIT result->params.pcm_blocks = d;
 
 This specifies the pcm block ratio over total capacity.
 

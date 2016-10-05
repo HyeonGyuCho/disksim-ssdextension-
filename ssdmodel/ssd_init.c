@@ -102,7 +102,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     usable_blocks = usable_blocks_per_plane * currdisk->params.planes_per_pkg;
 
 #ifdef PN_SSD
-    pcm_usable_blocks_per_plane  = (currdisk->params.pcm_block_ratio * usable_blocks_per_plane) / 100;
+    pcm_usable_blocks_per_plane  = (currdisk->params.pcm_blocks * usable_blocks_per_plane) / 100;
     pcm_usable_blocks            = pcm_usable_blocks_per_plane * currdisk->params.planes_per_pkg;
     
     nand_usable_blocks_per_plane = usable_blocks_per_plane - pcm_usable_blocks_per_plane;
