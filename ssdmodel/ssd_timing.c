@@ -325,10 +325,19 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
                 lpn, prev_block, pagepos_in_prev_block);
             ASSERT(0);
         } else {
-            metadata->block_usage[prev_block].page[pagepos_in_prev_block] = -1;
-            metadata->block_usage[prev_block].num_valid --;
-            metadata->plane_meta[prev_plane].valid_pages --;
-            ssd_assert_valid_pages(prev_plane, metadata, s);
+#ifdef PN_SSD
+            if (metadata->block_usage[prev_block].nBlocktype == NAND_TYPE) {
+#endif
+                metadata->block_usage[prev_block].page[pagepos_in_prev_block] = -1;
+                metadata->block_usage[prev_block].num_valid --;
+                metadata->plane_meta[prev_plane].valid_pages --;
+                ssd_assert_valid_pages(prev_plane, metadata, s);
+#ifdef PN_SSD
+            } else {
+                cost = s->params.pcm_write_latency;
+                return cost;
+            }
+#endif
         }
     } else {
         fprintf(stderr, "Error: This case should not be executed\n");
@@ -351,7 +360,15 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
     }
 
     // add the cost of the write
+#ifdef PN_SSD
+    if (metadata->block_usage[active_block].nBlocktype == NAND_TYPE) {
+        cost = s->params.page_write_latency;
+    } else {
+        cost = s->params.pcm_write_latency;
+    }
+#else
     cost = s->params.page_write_latency;
+#endif
     //printf("lpn %d active pg %d\n", lpn, active_page);
 
     // go to the next free page
@@ -621,6 +638,11 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
     int read_cycle = 0;
     listnode **parunits;
 
+#ifdef PN_SSD
+    int ppage;
+    int read_block;
+#endif
+
     // all the requests must be of the same type
     for (i = 1; i < total; i ++) {
         ASSERT(reqs[i]->is_read == reqs[0]->is_read);
@@ -678,9 +700,21 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                 // get the request
                 r = (ssd_req *)n->data;
                 lpn = ssd_logical_pageno(r->blk, s);
-
+#ifdef PN_SSD
+                ppage      = metadata->lba_table[lpn];
+                read_block = SSD_PAGE_TO_BLOCK(ppage, s);
+#endif
                 if (r->is_read) {
+#ifdef PN_SSD
+                    metadata->block_usage[read_block].num_read_count++;
+
+                    if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE)
+                        parunit_op_cost[i] = s->params.page_read_latency;
+                    else
+                        parunit_op_cost[i] = s->params.pcm_read_latency;
+#else
                     parunit_op_cost[i] = s->params.page_read_latency;
+#endif
                 } else {
                     int plane_num = r->plane_num;
                     // if this is the last page on the block, allocate a new block

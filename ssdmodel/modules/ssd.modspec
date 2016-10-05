@@ -120,6 +120,26 @@ INIT result->params.block_erase_latency = d;
 This specifies the time taken to erase all the contents of a flash 
 block (in ms).
 
+PARAM Pcm read latency		D	1
+TEST (d >= 0)
+INIT result->params.pcm_read_latency = d;
+
+This specifies the time taken to read a pcm page from the package
+into its register (in ms).
+
+PARAM Pcm write latency		D	1
+TEST (d >= 0)
+INIT result->params.pcm_write_latency = d;
+
+This specifies the time taken to write a pcm page from the package
+register into the flash memory (in ms).
+
+PARAM Pcm block ratio		D	1
+TEST (d >= 0)
+INIT result->params.pcm_block_ratio = d;
+
+This specifies the pcm block ratio over total capacity.
+
 PARAM Write policy			I	1
 TEST (i >= 0)
 INIT result->params.write_policy = i;

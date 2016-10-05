@@ -24,6 +24,13 @@ static void ssd_statinit (int devno, int firsttime)
    currdisk->stat.requestedbus = 0.0;
    currdisk->stat.waitingforbus = 0.0;
    currdisk->stat.numbuswaits = 0;
+
+#ifdef PN_SSD
+   currdisk->stat.tot_pcm_read_count   = 0;
+   currdisk->stat.tot_nand_read_count  = 0;
+   currdisk->stat.tot_pcm_write_count  = 0;
+   currdisk->stat.tot_nand_write_count = 0;
+#endif
 }
 
 void ssd_initialize_diskinfo ()
@@ -79,12 +86,28 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     unsigned int bsn = 1;
     int plane_block_mapping = currdisk->params.plane_block_mapping;
 
+#ifdef PN_SSD
+    unsigned int pcm_usable_blocks_per_plane;
+    unsigned int nand_usable_blocks_per_plane;
+
+    unsigned int pcm_usable_blocks;
+    unsigned int nand_usable_blocks;
+#endif
+
     //////////////////////////////////////////////////////////////////////////////
     // active page starts at the 1st page on the reserved section
     reserved_blocks_per_plane = (currdisk->params.reserve_blocks * currdisk->params.blocks_per_plane) / 100;
     usable_blocks_per_plane = currdisk->params.blocks_per_plane - reserved_blocks_per_plane;
     reserved_blocks = reserved_blocks_per_plane * currdisk->params.planes_per_pkg;
     usable_blocks = usable_blocks_per_plane * currdisk->params.planes_per_pkg;
+
+#ifdef PN_SSD
+    pcm_usable_blocks_per_plane  = (currdisk->params.pcm_block_ratio * usable_blocks_per_plane) / 100;
+    pcm_usable_blocks            = pcm_usable_blocks_per_plane * currdisk->params.planes_per_pkg;
+    
+    nand_usable_blocks_per_plane = usable_blocks_per_plane - pcm_usable_blocks_per_plane;
+    nand_usable_blocks           = nand_usable_blocks_per_plane * currdisk->params.planes_per_pkg;
+#endif
 
     //////////////////////////////////////////////////////////////////////////////
     // initialize the free blocks and free pages
@@ -248,6 +271,15 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
 
         // init the bsn to be zero
         metadata->block_usage[i].bsn = 0;
+#ifdef PN_SSD
+        metadata->block_usage[i].num_read_count = 0;
+
+        if(i % (usable_blocks / pcm_usable_blocks) == 0) {
+            metadata->block_usage[i].nBlocktype = PCM_TYPE;
+        } else {
+            metadata->block_usage[i].nBlocktype = NAND_TYPE;
+        }
+#endif
     }
 
     //////////////////////////////////////////////////////////////////////////////

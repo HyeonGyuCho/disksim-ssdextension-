@@ -499,8 +499,11 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
     // we create a list of greedily selected blocks
     ll_create(&greedy_list);
     for (i = 0; i < s->params.blocks_per_element; i ++) {
+#ifdef PN_SSD
+        if (metadata->block_usage[i].nBlocktype == NAND_TYPE && _ssd_pick_block_to_clean(i, plane_num, elem_num, metadata, s)) {
+#else
         if (_ssd_pick_block_to_clean(i, plane_num, elem_num, metadata, s)) {
-
+#endif
             // greedily select the block
             if (metadata->block_usage[i].num_valid <= min_valid) {
                 ASSERT(i == metadata->block_usage[i].block_num);

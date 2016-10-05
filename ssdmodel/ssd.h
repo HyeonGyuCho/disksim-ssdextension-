@@ -24,12 +24,24 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_MAX_ELEMS_PER_GANG      SSD_MAX_ELEMENTS// if you're changing this, do change the following bits too
 #define SSD_BITS_ELEMS_PER_GANG     8
 
+#define PN_SSD                      
+
+#ifdef PN_SSD
+#define PCM_TYPE                    1
+#define NAND_TYPE                   2
+#endif
 
 typedef struct {
    statgen acctimestats;
    double  requestedbus;
    double  waitingforbus;
    int     numbuswaits;
+#ifdef PN_SSD
+   int     tot_pcm_read_count;
+   int     tot_nand_read_count;
+   int     tot_pcm_write_count;
+   int     tot_nand_write_count;
+#endif
 } ssd_stat_t;
 
 /*
@@ -66,6 +78,11 @@ typedef enum {
 typedef struct _block_metadata {
     int         block_num;              //
     int         plane_num;              // the plane to which this block belongs to
+
+#ifdef PN_SSD
+    int         nBlocktype;             // PCM: 1, NAND: 2
+    unsigned int num_read_count;        // the number of block read count
+#endif
 
     int         *page;                  // size of the array = pages_per_block
                                         // holds all the valid logical page numbers present
@@ -297,6 +314,10 @@ typedef struct _ssd_timing_params {
     double page_read_latency;           // time to read a page into chip register
     double page_write_latency;          // time to write a page from chip register
     double block_erase_latency;         // time to erase a block
+
+    double pcm_read_latency;            // time to read a page into pcm chip register
+    double pcm_write_latency;           // time to write a page from pcm chip register
+    double pcm_block_ratio;             // PCM block ratio over total capacity
 
     int     write_policy;               // policy followed when writing a block
                                         // follow the above definitions
