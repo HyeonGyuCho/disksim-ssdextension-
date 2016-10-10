@@ -146,6 +146,10 @@ typedef struct _ssd_element_metadata {
 #ifdef PN_SSD
     int *hot_table;                 // a table including the hottest block info
     int hot_size;                   // hot region size
+    int pcm_avg_read_count;         // PRAM average read count 
+    int pcm_min_read_count;         // PRAM block which has max read count
+    int pcm_usable_blocks;          // The number of PRAM block 
+    int pcm_interval;               // PRAM interval;
 #endif
 
     char *free_blocks;              // each bit indicates whether a block in the
@@ -182,6 +186,7 @@ typedef struct _ssd_element_metadata {
 } ssd_element_metadata;
 
 /*
+ * a ssd plane consists of a bunch of blocks (2048 according to Samsung specifications)
  * a ssd plane consists of a bunch of blocks (2048 according to Samsung specifications)
  * and a register for transferring data in and out.
  */
@@ -455,7 +460,6 @@ int     ssd_get_numcyls (int devno);
 double  ssd_get_blktranstime (ioreq_event *curr);
 int     ssd_get_avg_sectpercyl (int devno);
 void    ssd_get_mapping (int maptype, int devno, int blkno, int *cylptr, int *surfaceptr, int *blkptr);
-void    ssd_event_arrive (ioreq_event *curr);
 int     ssd_get_distance (int devno, ioreq_event *req, int exact, int direction);
 double  ssd_get_servtime (int devno, ioreq_event *req, int checkcache, double maxtime);
 double  ssd_get_acctime (int devno, ioreq_event *req, double maxtime);

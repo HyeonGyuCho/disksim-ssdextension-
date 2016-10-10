@@ -14,8 +14,10 @@ do
     case "$i"
     in
         -g)
-            cgdb --args $PREFIX/disksim ssd-iozone.parv ssd-iozone.outv ascii $3 0;
-#            cgdb --args $PREFIX/disksim ssd-postmark.parv ssd-postmark.outv ascii ssd-postmark-aligned2.trace 0 
+#            cgdb --args $PREFIX/disksim ssd-iozone.parv ssd-iozone.outv ascii $3 0;
+#            cgdb --args $PREFIX/disksim ssd-sr250k.parv ssd-sr250k.outv ascii 0 1 
+#             cgdb --args $PREFIX/disksim ssd-rr250k.parv ssd-rr250k.outv ascii 0 1 
+            cgdb --args $PREFIX/disksim ssd-postmark.parv ssd-postmark.outv ascii ssd-postmark-aligned2.trace 0 
 #            cgdb --args $PREFIX/disksim ssd-rw5m.parv ssd-rw5m.outv ascii 0 1 
             grep "ssd Response time average:" ssd-iozone.outv | grep -v "#"
             break;;
