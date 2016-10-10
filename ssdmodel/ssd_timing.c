@@ -42,9 +42,10 @@ int hot_table_full(ssd_element_metadata *metadata) {
     return 1;
 }
 
-int hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num) {
+double hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num) {
     int i;
-    int cost = 0, read_count = 0;
+    double cost = 0;
+    int read_count = 0;
     int max_read_count;
     int min_read_count = metadata->pcm_avg_read_count;
     int interval_pcm   = metadata->pcm_interval;
@@ -160,7 +161,7 @@ int hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int pl
             
             metadata->block_usage[pcm_blk].page[i] = nand_lpn;
            
-            //return cost;
+            return cost;
         }
     } while(++i < s->params.pages_per_block - 1);
     return cost;
@@ -877,9 +878,9 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                     }
 
                     if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE)
-                        parunit_op_cost[i] = s->params.page_read_latency;
+                        parunit_op_cost[i] += s->params.page_read_latency;
                     else
-                        parunit_op_cost[i] = s->params.pcm_read_latency;
+                        parunit_op_cost[i] += s->params.pcm_read_latency;
 #else
                     parunit_op_cost[i] = s->params.page_read_latency;
 #endif
