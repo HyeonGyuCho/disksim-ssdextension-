@@ -8,6 +8,82 @@
 #include "ssd_utils.h"
 #include "modules/ssdmodel_ssd_param.h"
 
+#ifdef PN_SSD
+void hot_table_clean(ssd_element_metadata *metadata) {
+    int i;
+
+    for(i = 0; i < metadata->hot_size; i++) {
+        metadata->hot_table[i] = -1;
+    }
+}
+
+void hot_table_add(int read_block, ssd_element_metadata *metadata) {
+    int i;
+
+    for(i = 0; i < metadata->hot_size; i++) {
+        if(metadata->hot_table[i] != -1) {
+            if(metadata->hot_table[i] == read_block)
+                return;
+        }
+        else {
+            metadata->hot_table[i] = read_block;
+            return;
+        }
+    }
+}
+
+int hot_table_full(ssd_element_metadata *metadata) {
+    int i;
+
+    for(i = 0; i < metadata->hot_size; i++) {
+        if(metadata->hot_table[i] == -1)
+            return 0;
+    }
+    return 1;
+}
+
+int hot_migration(ssd_t *s, ssd_element_metadata *metadata) {
+    int i;
+    int cost = 0;
+    int max_read_count;
+    int min_read_count = metadata->pcm_avg_read_count;
+    int interval_pcm   = metadata->pcm_interval;
+    int index_blk;
+    int nand_blk = -1;
+    int pcm_blk  = -1;
+    int nand_page = -1;
+    int pcm_page = -1;
+
+    for(i = 0; i < metadata->pcm_usable_blocks - 1; i++) {
+        read_count += metadata->block_usage[i * interval_pcm].num_read_count;
+
+        if(metadata->block_usage[i * interval_pcm].num_read_count < min_read_count) {
+            min_read_count = metadata->block_usage[i * interval_pcm].num_read_count;
+            pcm_blk = i * interval_pcm;
+        }
+    }
+
+    metadata->pcm_avg_read_count = read_count / metadata->pcm_usable_blocks;
+    max_read_count = metadata->pcm_avg_read_count;
+
+    for(i = 0; i < metadata->hot_size; i++) {
+        index_blk = metadata->hot_table[i];
+        if(metadata->block_usage[index_blk].num_read_count > max_read_count) {
+            max_read_count = metadata->block_usage[index_blk].num_read_count;
+            block = index_blk;
+        }
+    }
+
+        
+    pcm_page = metadata->block_usage[pcm_blk].page[i];
+    
+    nand_page = metadata->block_usage[nand_blk].page[i];
+
+    return cost;
+}
+
+#endif
+
 struct my_timing_t {
     ssd_timing_t          t;
     ssd_timing_params    *params;
@@ -707,6 +783,13 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                 if (r->is_read) {
 #ifdef PN_SSD
                     metadata->block_usage[read_block].num_read_count++;
+
+                    if(hot_table_full(metadata)) {
+                        parunit_op_cost[i] += hot_migration(s, metadata);
+                        hot_table_clean(metadata);
+                    } else {
+                        hot_table_add(read_block, metadata);
+                    }
 
                     if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE)
                         parunit_op_cost[i] = s->params.page_read_latency;

@@ -24,7 +24,7 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_MAX_ELEMS_PER_GANG      SSD_MAX_ELEMENTS// if you're changing this, do change the following bits too
 #define SSD_BITS_ELEMS_PER_GANG     8
 
-//#define PN_SSD                      
+#define PN_SSD                      
 
 #ifdef PN_SSD
 #define PCM_TYPE                    1
@@ -143,6 +143,10 @@ typedef struct _parunit {
 typedef struct _ssd_element_metadata {
     int *lba_table;                 // a table mapping the lba to the physical pages
                                     // on the chip.
+#ifdef PN_SSD
+    int *hot_table;                 // a table including the hottest block info
+    int hot_size;                   // hot region size
+#endif
 
     char *free_blocks;              // each bit indicates whether a block in the
                                     // ssd_element is free or in use. number of bits

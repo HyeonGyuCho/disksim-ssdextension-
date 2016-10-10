@@ -208,6 +208,20 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
         exit(1);
     }
 
+#ifdef PN_SSD
+    metadata->hot_size = pcm_usable_blocks / 100;
+
+    metadata->hot_table = (int *)malloc(metadata->hot_size * sizeof(int));
+    for(i = 0; i < metadata->hot_size; i++) {
+        metadata->hot_table[i] = -1;
+    }
+    
+    metadata->pcm_avg_read_count = 0;
+    metadata->pcm_min_read_count = 0;
+    metadata->pcm_usable_blocks  = pcm_usable_blocks;
+    metadata->pcm_interval       = usable_blocks / pcm_usable_blocks;
+#endif
+
     //////////////////////////////////////////////////////////////////////////////
     // allocate the free blocks bit map
     // what if the no of blocks is not divisible by 8?
