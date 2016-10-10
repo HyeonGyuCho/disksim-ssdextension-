@@ -55,8 +55,8 @@ int hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int pl
     int pcm_lpn = -1;
     int nand_page, pcm_page;
 
-    //Calculate PRAM average read count
-    //Search PRAM block which has the lowest read count
+    // Calculate PRAM average read count
+    // Search PRAM block which has the lowest read count
     for(i = 0; i < metadata->pcm_usable_blocks; i++) {
         read_count += metadata->block_usage[i * interval_pcm].num_read_count;
 
@@ -77,28 +77,42 @@ int hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int pl
         }
     }
 
-    //There are no NAND & PCM victim block on hot table
+    // There are no NAND & PCM victim block on hot table
     if(nand_blk == -1 || pcm_blk == -1)
         return cost;
+   
+    unsigned int active_page;
+    unsigned int active_block;
+    unsigned int pagepos_in_block;
+    unsigned int active_plane;
+        
+    unsigned int nand_plane;
 
-    if (ssd_last_page_in_block(metadata->plane_meta[plane_num].active_page, s)) {
-        _ssd_alloc_active_block(plane_num, elem_num, s);
-    }
-    metadata->active_page = metadata->plane_meta[plane_num].active_page;
-
-    unsigned int active_page = metadata->active_page;
-    unsigned int active_block = SSD_PAGE_TO_BLOCK(active_page, s);
-    unsigned int pagepos_in_block = active_page % s->params.pages_per_block;
-    unsigned int active_plane = metadata->block_usage[active_block].plane_num;
-    
-    unsigned int nand_plane = metadata->block_usage[nand_blk].plane_num;
-
-    for(i = 0; i < s->params.pages_per_block - 2; i++) {
+    i = 0;
+    do {
         pcm_lpn = metadata->block_usage[pcm_blk].page[i];
         pcm_page = metadata->lba_table[pcm_lpn];
         nand_lpn = metadata->block_usage[nand_blk].page[i];
-        if(nand_page != -1) {
-            //PCM page migration to NAND block
+        
+        if(nand_lpn != -1) {
+            // if this is the last page on the block, allocate a new block
+            if (ssd_last_page_in_block(metadata->plane_meta[plane_num].active_page, s)) {
+                _ssd_alloc_active_block(plane_num, elem_num, s);
+            }
+
+            // issue the write to the current active page.
+            // we need to transfer the data across the serial pins for write.
+            metadata->active_page = metadata->plane_meta[plane_num].active_page;
+
+            active_page = metadata->active_page;
+            active_block = SSD_PAGE_TO_BLOCK(active_page, s);
+            pagepos_in_block = active_page % s->params.pages_per_block;
+            active_plane = metadata->block_usage[active_block].plane_num;
+            plane_num = active_plane;
+
+            nand_plane = metadata->block_usage[nand_blk].plane_num;
+
+            // PCM page migration to NAND block
             metadata->lba_table[pcm_lpn] = active_page;
 
             metadata->block_usage[active_block].page[pagepos_in_block] = pcm_lpn;
@@ -112,22 +126,29 @@ int hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int pl
                         metadata->block_usage[active_block].num_valid, active_block, s->params.pages_per_block);
                 exit(1);
             }
-
            
             cost += s->params.page_write_latency;
 
-            //active page change
+            // go to the next free page
             metadata->active_page = active_page + 1;
             metadata->plane_meta[active_plane].active_page = metadata->active_page;
 
+            // if this is the last data page on the block, let us write the 
+            // summary page also
             if (ssd_last_page_in_block(metadata->active_page, s)) {
+                // cost of transferring the summary page data
                 cost += ssd_data_transfer_cost(s, SSD_SECTORS_PER_SUMMARY_PAGE);
+
+                //cost of writeing the summary page data
                 cost += s->params.page_write_latency;
+
+                // seal the last summary page. since we use the summary page
+                // as a metadata, we don't count it as a valid data page.
                 metadata->block_usage[active_block].page[s->params.pages_per_block - 1] = -1;
                 metadata->block_usage[active_block].state = SSD_BLOCK_SEALED;
             }
 
-            //NAND page migration to PCM block
+            // NAND page migration to PCM block
             metadata->block_usage[nand_blk].page[i] = -1;
             metadata->block_usage[nand_blk].num_valid --;
             metadata->plane_meta[nand_plane].valid_pages --;
@@ -138,9 +159,10 @@ int hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int pl
             metadata->lba_table[nand_lpn] = pcm_page;
             
             metadata->block_usage[pcm_blk].page[i] = nand_lpn;
-            return cost;
+           
+            //return cost;
         }
-    }
+    } while(++i < s->params.pages_per_block - 1);
     return cost;
 }
 
