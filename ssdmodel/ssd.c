@@ -1154,14 +1154,35 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    int numbuswaits = 0;
    double waitingforbus = 0.0;
 
+#ifdef PN_SSD
+   int pcm_read_count = 0;
+   int nand_read_count = 0;
+   int pcm_write_count = 0;
+   int nand_write_count = 0;
+#endif
+
    for (i=0; i<setsize; i++) {
       ssd_t *currdisk = getssd (set[i]);
       numbuswaits += currdisk->stat.numbuswaits;
       waitingforbus += currdisk->stat.waitingforbus;
+#ifdef PN_SSD
+      pcm_read_count += currdisk->stat.tot_pcm_read_count;
+      nand_read_count += currdisk->stat.tot_nand_read_count;
+      pcm_write_count += currdisk->stat.tot_pcm_write_count;
+      nand_write_count += currdisk->stat.tot_nand_write_count;
+#endif
    }
 
    fprintf(outputfile, "%sTotal bus wait time: %f\n", prefix, waitingforbus);
    fprintf(outputfile, "%sNumber of bus waits: %d\n", prefix, numbuswaits);
+
+#ifdef PN_SSD
+   fprintf(outputfile, "%sNumber of pcm read count: %d\n", prefix, pcm_read_count);
+   fprintf(outputfile, "%sNumber of nand read count: %d\n", prefix, nand_read_count);
+   fprintf(outputfile, "%sNumber of pcm write count: %d\n", prefix, pcm_write_count);
+   fprintf(outputfile, "%sNumber of nand write count: %d\n", prefix, nand_write_count);
+#endif
+
 }
 
 void ssd_print_block_lifetime_distribution(int elem_num, ssd_t *s, int ssdno, double avg_lifetime, char *sourcestr)

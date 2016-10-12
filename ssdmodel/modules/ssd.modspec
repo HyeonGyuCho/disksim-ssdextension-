@@ -120,6 +120,13 @@ INIT result->params.block_erase_latency = d;
 This specifies the time taken to erase all the contents of a flash 
 block (in ms).
 
+PARAM Read intensity aware GC	I	1
+TEST (i >= 0)
+INIT result->params.ria_gc_percent = i;
+
+This specifies the read intensity aware GC starting point. 
+If the free blocks drop below this, ria_gc start.
+
 PARAM Pcm read latency		D	1
 TEST (d >= 0)
 INIT result->params.pcm_read_latency = d;

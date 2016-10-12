@@ -23,3 +23,7 @@ int ssd_choose_aligned_count(int page_size, int blkno, int count);
 void ssd_compute_access_time(ssd_t *s, int elem_num, ssd_req **reqs, int total);
 
 #endif
+
+#ifdef PN_SSD
+double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num, int blk, int MOVE);
+#endif

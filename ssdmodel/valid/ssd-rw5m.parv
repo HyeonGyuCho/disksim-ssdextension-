@@ -128,6 +128,9 @@ ssdmodel_ssd SSD {
      # blocks drop below this, cleaning kicks in
      Minimum free blocks percentage = 5,
 
+     # if the free blocks drop below this, rig_gc start
+     Read intensity aware GC = 10,
+
      # vp - a simple read-modify-erase-write policy = 1 (no longer supported)
      # vp - osr write policy = 2
      Write policy = 2,

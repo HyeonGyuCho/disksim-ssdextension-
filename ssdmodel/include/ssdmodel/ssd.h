@@ -29,6 +29,10 @@ extern struct device_header ssd_hdr_initializer;
 #ifdef PN_SSD
 #define PCM_TYPE                    1
 #define NAND_TYPE                   2
+
+#define NORMAL_GC                   1
+#define RIA_GC                      2
+#define RIA_MIG                     3
 #endif
 
 typedef struct {
@@ -335,6 +339,10 @@ typedef struct _ssd_timing_params {
     int     reserve_blocks;             // percentage of blocks to reserve
 
     int     min_freeblks_percent;       // min free blocks percentage
+
+#ifdef PN_SSD    
+    int     ria_gc_percent;             // Read intensity aware GC percentage
+#endif
 
     int     cleaning_policy;            // cleaning & wear-leveling policy used to
                                         // clean blocks

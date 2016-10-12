@@ -42,7 +42,7 @@ int hot_table_full(ssd_element_metadata *metadata) {
     return 1;
 }
 
-double hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num) {
+double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num, int blk, int MOVE) {
     int i;
     double cost = 0;
     int read_count = 0;
@@ -54,7 +54,7 @@ double hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int
     int pcm_blk  = -1;
     int nand_lpn = -1;
     int pcm_lpn = -1;
-    int nand_page, pcm_page;
+    int pcm_page;
 
     // Calculate PRAM average read count
     // Search PRAM block which has the lowest read count
@@ -70,18 +70,26 @@ double hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int
     metadata->pcm_avg_read_count = read_count / metadata->pcm_usable_blocks;
     max_read_count = metadata->pcm_avg_read_count;
 
-    for(i = 0; i < metadata->hot_size; i++) {
-        index_blk = metadata->hot_table[i];
-        if(metadata->block_usage[index_blk].num_read_count > max_read_count) {
-            max_read_count = metadata->block_usage[index_blk].num_read_count;
-            nand_blk = index_blk;
-        }
+    if (MOVE == RIA_MIG) {
+        for(i = 0; i < metadata->hot_size; i++) {
+            index_blk = metadata->hot_table[i];
+            if(metadata->block_usage[index_blk].num_read_count > max_read_count) {
+                max_read_count = metadata->block_usage[index_blk].num_read_count;
+                nand_blk = index_blk;
+            }
+        } 
+    } else {
+        nand_blk = blk;
     }
 
     // There are no NAND & PCM victim block on hot table
     if(nand_blk == -1 || pcm_blk == -1)
         return cost;
-   
+    
+    // Calculate read count    
+    metadata->block_usage[pcm_blk].num_read_count = metadata->block_usage[nand_blk].num_read_count;
+    metadata->block_usage[nand_blk].num_read_count = 0;
+
     unsigned int active_page;
     unsigned int active_block;
     unsigned int pagepos_in_block;
@@ -113,22 +121,46 @@ double hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int
 
             nand_plane = metadata->block_usage[nand_blk].plane_num;
 
-            // PCM page migration to NAND block
-            metadata->lba_table[pcm_lpn] = active_page;
+            // Previous NAND block invalidate
+            metadata->block_usage[nand_blk].page[i] = -1;
+            metadata->block_usage[nand_blk].num_valid --;
+            metadata->plane_meta[nand_plane].valid_pages --;
 
-            metadata->block_usage[active_block].page[pagepos_in_block] = pcm_lpn;
-            metadata->block_usage[active_block].num_valid ++;
-            metadata->plane_meta[active_plane].valid_pages ++;
+            if (metadata->block_usage[active_block].nBlocktype == NAND_TYPE) {
+                // PCM page migration to NAND block
+                metadata->lba_table[pcm_lpn] = active_page;
+
+                metadata->block_usage[active_block].page[pagepos_in_block] = pcm_lpn;
+                metadata->block_usage[active_block].num_valid ++;
+                metadata->plane_meta[active_plane].valid_pages ++;
+
+                cost += s->params.pcm_read_latency;
+                cost += s->params.page_write_latency;
+                
+                // NAND page migration to PCM block
+                metadata->lba_table[nand_lpn] = pcm_page;
+
+                metadata->block_usage[pcm_blk].page[i] = nand_lpn;
+
+                cost += s->params.pcm_write_latency; 
+            } else {
+                metadata->lba_table[nand_lpn] = active_page;
+
+                metadata->block_usage[active_block].page[pagepos_in_block] = nand_lpn;
+                metadata->block_usage[active_block].num_valid ++;
+                metadata->plane_meta[active_plane].valid_pages ++;
+
+                cost += s->params.pcm_write_latency;
+            }
+
             ssd_assert_valid_pages(active_plane, metadata, s);
-
+            
             // some sanity checking
             if (metadata->block_usage[active_block].num_valid >= s->params.pages_per_block) {
                 fprintf(stderr, "Error: len %d of block %d is greater than or equal to pages per block %d\n",
                         metadata->block_usage[active_block].num_valid, active_block, s->params.pages_per_block);
                 exit(1);
             }
-           
-            cost += s->params.page_write_latency;
 
             // go to the next free page
             metadata->active_page = active_page + 1;
@@ -149,21 +181,12 @@ double hot_migration(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int
                 metadata->block_usage[active_block].state = SSD_BLOCK_SEALED;
             }
 
-            // NAND page migration to PCM block
-            metadata->block_usage[nand_blk].page[i] = -1;
-            metadata->block_usage[nand_blk].num_valid --;
-            metadata->plane_meta[nand_plane].valid_pages --;
-            ssd_assert_valid_pages(nand_plane, metadata, s);
-
-            cost += s->params.pcm_write_latency;
-
-            metadata->lba_table[nand_lpn] = pcm_page;
-            
-            metadata->block_usage[pcm_blk].page[i] = nand_lpn;
-           
-            return cost;
+            s->elements[elem_num].stat.pages_moved ++;
+            //return cost / s->params.pages_per_block;
+            //return 0;
         }
     } while(++i < s->params.pages_per_block - 1);
+    //return 0;
     return cost;
 }
 
@@ -496,6 +519,7 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
                 ssd_assert_valid_pages(prev_plane, metadata, s);
 #ifdef PN_SSD
             } else {
+                s->stat.tot_pcm_write_count ++;
                 cost = s->params.pcm_write_latency;
                 return cost;
             }
@@ -524,8 +548,10 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
     // add the cost of the write
 #ifdef PN_SSD
     if (metadata->block_usage[active_block].nBlocktype == NAND_TYPE) {
+        s->stat.tot_nand_write_count ++;
         cost = s->params.page_write_latency;
     } else {
+        s->stat.tot_pcm_write_count ++;
         cost = s->params.pcm_write_latency;
     }
 #else
@@ -552,7 +578,6 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
         metadata->block_usage[active_block].state = SSD_BLOCK_SEALED;
         //printf("SUMMARY: lpn %d active pg %d\n", lpn, active_page);
     }
-
     return cost;
 }
 
@@ -871,16 +896,19 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                     metadata->block_usage[read_block].num_read_count++;
 
                     if(hot_table_full(metadata)) {
-                        parunit_op_cost[i] += hot_migration(s, metadata, elem_num, r->plane_num);
+                        parunit_op_cost[i] += hot_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
                         hot_table_clean(metadata);
                     } else if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
                         hot_table_add(read_block, metadata);
                     }
 
-                    if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE)
+                    if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
                         parunit_op_cost[i] += s->params.page_read_latency;
-                    else
+                        s->stat.tot_pcm_read_count ++;
+                    } else {
                         parunit_op_cost[i] += s->params.pcm_read_latency;
+                        s->stat.tot_nand_read_count ++;
+                    }
 #else
                     parunit_op_cost[i] = s->params.page_read_latency;
 #endif
