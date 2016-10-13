@@ -30,6 +30,10 @@ static void ssd_statinit (int devno, int firsttime)
    currdisk->stat.tot_nand_read_count  = 0;
    currdisk->stat.tot_pcm_write_count  = 0;
    currdisk->stat.tot_nand_write_count = 0;
+   currdisk->stat.tot_ria_mig              = 0;
+   currdisk->stat.tot_ria_gc               = 0;
+   currdisk->stat.tot_ria_pcm_write_count  = 0;
+   currdisk->stat.tot_ria_nand_write_count = 0;
 #endif
 }
 
@@ -209,7 +213,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     }
 
 #ifdef PN_SSD
-    metadata->hot_size = pcm_usable_blocks / 100;
+    metadata->hot_size = pcm_usable_blocks / 10;
 
     metadata->hot_table = (int *)malloc(metadata->hot_size * sizeof(int));
     for(i = 0; i < metadata->hot_size; i++) {
@@ -287,6 +291,12 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
         metadata->block_usage[i].bsn = 0;
 #ifdef PN_SSD
         metadata->block_usage[i].num_read_count = 0;
+        
+        if ((metadata->block_usage[i].page_read_count = (int *) calloc(currdisk->params.pages_per_block, sizeof(int))) == NULL) {
+            fprintf(stderr, "Error: malloc to page read count table in ssd_block_metadata_init failed\n");
+            fprintf(stderr, "Allocation size = %d\n", currdisk->params.pages_per_block * sizeof(int));
+            exit(1);
+        }
 
         if(i % (usable_blocks / pcm_usable_blocks) == 0) {
             metadata->block_usage[i].nBlocktype = PCM_TYPE;

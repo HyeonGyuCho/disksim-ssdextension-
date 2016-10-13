@@ -47,7 +47,7 @@ static double ssd_crossover_cost
  * writes a page to the current active page. if there is no active page,
  * allocate one and then move.
  */
-#ifdef PN_SSD
+#ifdef RIA
 static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, ssd_t *s, int clean_req)
 #else
 static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, ssd_t *s)
@@ -65,7 +65,7 @@ static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, 
 
         case SSD_COPY_BACK_ENABLE:
             ASSERT(metadata->plane_meta[plane_num].active_page == metadata->active_page);
-#ifdef PN_SSD
+#ifdef RIA
             if (clean_req == RIA_GC) {
                 cost += hot_move(s, metadata, elem_num, plane_num, from_blk, clean_req);
             } else {
@@ -85,7 +85,7 @@ static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, 
                 s->params.copy_back);
             exit(1);
     }
-#ifdef PN_SSD
+#ifdef RIA
     //nothing
 #else
     cost += _ssd_write_page_osr(s, metadata, lpn);
@@ -97,7 +97,7 @@ static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, 
 /*
  * reads the data out of a page and writes it back the active page.
  */
-#ifdef PN_SSD
+#ifdef RIA
 static double ssd_clean_one_page (int lp_num, int pp_index, int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s, int clean_req)
 #else
 static double ssd_clean_one_page (int lp_num, int pp_index, int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s)
@@ -106,7 +106,7 @@ static double ssd_clean_one_page (int lp_num, int pp_index, int blk, int plane_n
     double xfer_cost = 0;
 
     cost += s->params.page_read_latency;
-#ifdef PN_SSD
+#ifdef RIA
     cost += ssd_move_page(lp_num, blk, plane_num, elem_num, s, clean_req);
 #else
     cost += ssd_move_page(lp_num, blk, plane_num, elem_num, s);
@@ -411,7 +411,7 @@ int ssd_migrate_cold_data(int to_blk, double *mcost, int plane_num, int elem_num
 
     // next, clean the block to which we'll transfer the
     // cold data
-#ifdef PN_SSD
+#ifdef RIA
 #else
     cost += _ssd_clean_block_fully(to_blk, metadata->block_usage[to_blk].plane_num, elem_num, metadata, s);
 #endif
@@ -511,7 +511,7 @@ int ssd_pick_wear_aware_with_migration
  * a greedy solution, where we find the block in a plane with the least
  * num of valid pages and return it.
  */
-#ifdef PN_SSD
+#ifdef RIA
 static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, ssd_element_metadata *metadata, ssd_t *s, int clean_req)
 #else
 static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, ssd_element_metadata *metadata, ssd_t *s)
@@ -522,7 +522,7 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
     int size;
     int block = -1;
     int min_valid = s->params.pages_per_block - 1; // one page goes for the summary info
-#ifdef PN_SSD
+#ifdef RIA
     int max_read_count = metadata->pcm_avg_read_count;
 #endif
     listnode *greedy_list;
@@ -541,7 +541,7 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
         if (_ssd_pick_block_to_clean(i, plane_num, elem_num, metadata, s)) {
 #endif
             // greedily select the block
-#ifdef PN_SSD
+#ifdef RIA
         if (clean_req == NORMAL_GC) {
 #endif
             if (metadata->block_usage[i].num_valid <= min_valid) {
@@ -550,9 +550,9 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
                 min_valid = metadata->block_usage[i].num_valid;
                 block = i;
             }
-#ifdef PN_SSD
+#ifdef RIA
         } else {
-            if (metadata->block_usage[i].num_read_count >= max_read_count) {
+            if (((metadata->block_usage[i].num_read_count >= metadata->pcm_avg_read_count) && (metadata->block_usage[i].num_valid <= min_valid))) {
                 ASSERT(i == metadata->block_usage[i].block_num);
                 ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
                 max_read_count = metadata->block_usage[i].num_read_count;
@@ -563,7 +563,7 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
         }
     }
 
-#ifdef PN_SSD
+#ifdef RIA
     if (clean_req == NORMAL_GC) {
         ASSERT(block != -1);
     } else {
@@ -587,7 +587,7 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
 
         listnode *n = ll_get_nth_node(greedy_list, i);
         bm = ((block_metadata *)n->data);
-#ifdef PN_SSD
+#ifdef RIA
         if (i == 0 && clean_req == NORMAL_GC) {
 #else
         if (i == 0) {
@@ -654,13 +654,13 @@ static int ssd_pick_block_to_clean1(int plane_num, int elem_num, ssd_element_met
         exit(1);
     }
 }
-#ifdef PN_SSD
+#ifdef RIA
 static int ssd_pick_block_to_clean(int plane_num, int elem_num, double *mcost, ssd_element_metadata *metadata, ssd_t *s, int clean_req)
 #else
 static int ssd_pick_block_to_clean(int plane_num, int elem_num, double *mcost, ssd_element_metadata *metadata, ssd_t *s)
 #endif
 {
-#ifdef PN_SSD
+#ifdef RIA
     return ssd_pick_block_to_clean2(plane_num, elem_num, mcost, metadata, s, clean_req);
 #else
     return ssd_pick_block_to_clean2(plane_num, elem_num, mcost, metadata, s);
@@ -671,7 +671,7 @@ static int ssd_pick_block_to_clean(int plane_num, int elem_num, double *mcost, s
  * this routine cleans one page at a time in a block. if all the
  * valid pages are moved, then the block is erased.
  */
-#ifdef PN_SSD
+#ifdef RIA
 static double _ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s, int clean_req)
 #else
 static double _ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s)
@@ -692,7 +692,7 @@ static double _ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s)
             int lp_num = metadata->block_usage[block].page[i];
 
             if (lp_num != -1) {
-#ifdef PN_SSD
+#ifdef RIA
                 cost += ssd_clean_one_page(lp_num, i, block, plane_num, elem_num, metadata, s, clean_req);
 #else
                 cost += ssd_clean_one_page(lp_num, i, block, plane_num, elem_num, metadata, s);
@@ -728,7 +728,7 @@ double ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s)
     // see if we've already started the cleaning
     if (!pm->clean_in_progress) {
         // pick a block to be cleaned
-#ifdef PN_SSD
+#ifdef RIA
 #else
         pm->clean_in_block = ssd_pick_block_to_clean(plane_num, elem_num, &mcost, metadata, s);
 #endif
@@ -737,7 +737,7 @@ double ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s)
 
     // yes, the cleaning on this plane is already initiated
     ASSERT(pm->clean_in_block != -1);
-#ifdef PN_SSD
+#ifdef RIA
 #else
     cost = _ssd_clean_block_partially(plane_num, elem_num, s);
 #endif
@@ -750,7 +750,7 @@ double ssd_clean_block_partially(int plane_num, int elem_num, ssd_t *s)
  * pages and writing them to the current active block. the
  * cleaned block is also erased.
  */
-#ifdef PN_SSD
+#ifdef RIA
 double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s, int clean_req)
 #else
 double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s)
@@ -768,7 +768,7 @@ double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_
     s->elements[elem_num].stat.num_clean ++;
 
     do {
-#ifdef PN_SSD
+#ifdef RIA
         cost += _ssd_clean_block_partially(plane_num, elem_num, s, clean_req);
 #else
         cost += _ssd_clean_block_partially(plane_num, elem_num, s);
@@ -778,7 +778,7 @@ double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_
     return cost;
 }
 
-#ifdef PN_SSD
+#ifdef RIA
 static double ssd_clean_block_fully(int plane_num, int elem_num, ssd_t *s, int clean_req)
 #else
 static double ssd_clean_block_fully(int plane_num, int elem_num, ssd_t *s)
@@ -792,7 +792,7 @@ static double ssd_clean_block_fully(int plane_num, int elem_num, ssd_t *s)
 
     ASSERT((pm->clean_in_progress == 0) && (pm->clean_in_block = -1));
 
-#ifdef PN_SSD    
+#ifdef RIA    
     blk = ssd_pick_block_to_clean(plane_num, elem_num, &mcost, metadata, s, clean_req);
 
     if (clean_req == RIA_GC && blk == -1) {
@@ -982,7 +982,7 @@ static double ssd_clean_blocks_greedy(int plane_num, int elem_num, ssd_t *s)
 
                 // okies, finally here we're with the block to be cleaned.
                 // invoke cleaning until we reach the high watermark.
-#ifdef PN_SSD
+#ifdef RIA
 #else
                 cost += _ssd_clean_block_fully(blk, metadata->block_usage[blk].plane_num, elem_num, metadata, s);
 #endif
@@ -1038,7 +1038,7 @@ double ssd_clean_element_no_copyback(int elem_num, ssd_t *s)
     return cost;
 }
 
-#ifdef PN_SSD
+#ifdef RIA
 double ssd_clean_plane_copyback(int plane_num, int elem_num, ssd_t *s, int clean_req)
 #else
 double ssd_clean_plane_copyback(int plane_num, int elem_num, ssd_t *s)
@@ -1051,7 +1051,7 @@ double ssd_clean_plane_copyback(int plane_num, int elem_num, ssd_t *s)
     switch(s->params.cleaning_policy) {
         case DISKSIM_SSD_CLEANING_POLICY_GREEDY_WEAR_AGNOSTIC:
         case DISKSIM_SSD_CLEANING_POLICY_GREEDY_WEAR_AWARE:
-#ifdef PN_SSD
+#ifdef RIA
             cost = ssd_clean_block_fully(plane_num, elem_num, s, clean_req);
 #else
             cost = ssd_clean_block_fully(plane_num, elem_num, s);
@@ -1084,7 +1084,7 @@ double ssd_clean_element_copyback(int elem_num, ssd_t *s)
 
     for (i = 0; i < SSD_PARUNITS_PER_ELEM(s); i ++) {
         if ((plane_to_clean[i] = ssd_start_cleaning_parunit(i, elem_num, s)) != -1) {
-#ifdef PN_SSD
+#ifdef RIA
             if (s->elements[elem_num].metadata.tot_free_blocks <= (int)LOW_WATERMARK_PER_PLANE(s))
                 clean_req = NORMAL_GC;
             else 
@@ -1095,7 +1095,7 @@ double ssd_clean_element_copyback(int elem_num, ssd_t *s)
         }
     }
 
-#ifdef PN_SSD
+#ifdef RIA
     if (clean_req != 0) {
 #else 
     if (clean_req) {
@@ -1115,7 +1115,7 @@ double ssd_clean_element_copyback(int elem_num, ssd_t *s)
             }
 
             metadata->active_page = metadata->plane_meta[plane_num].active_page;
-#ifdef PN_SSD
+#ifdef RIA
             cleaning_cost = ssd_clean_plane_copyback(plane_num, elem_num, s, clean_req);
 #else
             cleaning_cost = ssd_clean_plane_copyback(plane_num, elem_num, s);
@@ -1175,7 +1175,7 @@ int ssd_start_cleaning_parunit(int parunit_num, int elem_num, ssd_t *s)
  */
 int ssd_start_cleaning(int plane_num, int elem_num, ssd_t *s)
 {
-#ifdef PN_SSD
+#ifdef RIA
     if (plane_num == -1) {
         unsigned int PN_low = (unsigned int)PN_LOW_WATERMARK_PER_ELEMENT(s);
         return (s->elements[elem_num].metadata.tot_free_blocks <= PN_low);

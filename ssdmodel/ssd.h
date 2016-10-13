@@ -25,11 +25,14 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_BITS_ELEMS_PER_GANG     8
 
 #define PN_SSD                      
+//#define RIA
 
 #ifdef PN_SSD
 #define PCM_TYPE                    1
 #define NAND_TYPE                   2
+#endif
 
+#ifdef RIA
 #define NORMAL_GC                   1
 #define RIA_GC                      2
 #define RIA_MIG                     3
@@ -45,6 +48,10 @@ typedef struct {
    int     tot_nand_read_count;
    int     tot_pcm_write_count;
    int     tot_nand_write_count;
+   int     tot_ria_mig;
+   int     tot_ria_gc;
+   int     tot_ria_pcm_write_count;
+   int     tot_ria_nand_write_count;
 #endif
 } ssd_stat_t;
 
@@ -85,7 +92,8 @@ typedef struct _block_metadata {
 
 #ifdef PN_SSD
     int         nBlocktype;             // PCM: 1, NAND: 2
-    unsigned int num_read_count;        // the number of block read count
+    int         num_read_count;         // the number of block read count
+    int         *page_read_count;       // page read count table
 #endif
 
     int         *page;                  // size of the array = pages_per_block

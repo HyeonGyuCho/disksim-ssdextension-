@@ -61,7 +61,7 @@ double ssd_clean_element_no_copyback(int elem_num, ssd_t *s);
 int ssd_free_bits(int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s);
 void ssd_assert_plane_freebits(int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s);
 
-#ifdef PN_SSD
+#ifdef RIA
 double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s, int clean_req);
 #else
 double _ssd_clean_block_fully(int blk, int plane_num, int elem_num, ssd_element_metadata *metadata, ssd_t *s);

@@ -218,7 +218,7 @@ ssdmodel_ssd SSD {
 #     Block erase latency = 1.5,
 
      Page read latency = 0.088,
-     Page write latency = 0.350,
+     Page write latency = 0.704,
      Block erase latency = 10,
 
      Pcm read latency = 0.00256,
