@@ -25,7 +25,9 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_BITS_ELEMS_PER_GANG     8
 
 #define PN_SSD                      
-//#define RIA
+#define RIA
+//#define READ_DISTURB
+//#define PAGE_MIG
 
 #ifdef PN_SSD
 #define PCM_TYPE                    1
@@ -340,6 +342,8 @@ typedef struct _ssd_timing_params {
     double pcm_write_latency;           // time to write a page from pcm chip register
     double pcm_blocks;                  // PCM blocks over total capacity
 
+    double read_threshold;              // Read disturb threshold
+
     int     write_policy;               // policy followed when writing a block
                                         // follow the above definitions
                                         // (e.g., DISKSIM_SSD_WRITE_POLICY_SIMPLE)
@@ -348,9 +352,9 @@ typedef struct _ssd_timing_params {
 
     int     min_freeblks_percent;       // min free blocks percentage
 
-#ifdef PN_SSD    
+//#ifdef PN_SSD    
     int     ria_gc_percent;             // Read intensity aware GC percentage
-#endif
+//#endif
 
     int     cleaning_policy;            // cleaning & wear-leveling policy used to
                                         // clean blocks

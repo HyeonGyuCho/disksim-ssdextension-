@@ -629,33 +629,33 @@ getnextevent(void)
    event *temp;
 
    if (curr) {
-      simtime = curr->time;
+       simtime = curr->time;
 
-      if (curr->type == NULL_EVENT) {
-	if ((disksim->iotrace) && io_using_external_event(curr)) {
-	  temp = io_get_next_external_event(disksim->iotracefile);
-	  if (!temp) {
-            disksim->stop_sim = TRUE;
-	  }
-	  else { 
-	    // OK
-	  }
-	} 
-	else {
-	  fprintf(stderr, "NULL_EVENT not linked to any external source\n");
-	  exit(1);
-	}
+       if (curr->type == NULL_EVENT) {
+           if ((disksim->iotrace) && io_using_external_event(curr)) {
+               temp = io_get_next_external_event(disksim->iotracefile);
+               if (!temp) {
+                   disksim->stop_sim = TRUE;
+               }
+               else { 
+                   // OK
+               }
+           } 
+           else {
+               fprintf(stderr, "NULL_EVENT not linked to any external source\n");
+               exit(1);
+           }
 
-	if (temp) {
-	  temp->type = NULL_EVENT;
-	  addtointq(temp);
-	}
+           if (temp) {
+               temp->type = NULL_EVENT;
+               addtointq(temp);
+           }
 
-      } // curr->type == NULL_EVENT
+       } // curr->type == NULL_EVENT
    }
    else {
-      fprintf (outputfile, "Returning NULL from getnextevent\n");
-      fflush (outputfile);
+       fprintf (outputfile, "Returning NULL from getnextevent\n");
+       fflush (outputfile);
    }
 
    return curr;

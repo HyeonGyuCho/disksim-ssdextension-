@@ -552,11 +552,17 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
             }
 #ifdef RIA
         } else {
-            if (((metadata->block_usage[i].num_read_count >= metadata->pcm_avg_read_count) && (metadata->block_usage[i].num_valid <= min_valid))) {
+            if (metadata->block_usage[i].num_valid <= min_valid) {
                 ASSERT(i == metadata->block_usage[i].block_num);
                 ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
-                max_read_count = metadata->block_usage[i].num_read_count;
-                block = i;
+                min_valid = metadata->block_usage[i].num_valid;
+                
+                if (metadata->block_usage[i].num_read_count >= metadata->pcm_avg_read_count) {
+                    block = i;
+                } else {
+                    block = -1;
+                }
+
             }
         }
 #endif

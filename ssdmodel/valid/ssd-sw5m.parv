@@ -126,12 +126,12 @@ ssdmodel_ssd SSD {
 
      # vp - min percentage of free blocks needed. if the free 
      # blocks drop below this, cleaning kicks in
-     Minimum free blocks percentage = 5,
+     Minimum free blocks percentage = 3,
 
      # if the free blocks drop below this, rig_gc start
-     Read intensity aware GC = 10,
+     Read intensity aware GC = 5,
 
-     # vp - a simple read-modify-erase-write policy = 1 (no longer supported)
+     # vp - a simple read-modify-erase-write pol5y = 1 (no longer supporte10)
      # vp - osr write policy = 2
      Write policy = 2,
 
@@ -218,12 +218,14 @@ ssdmodel_ssd SSD {
 #     Block erase latency = 1.5,
 
      Page read latency = 0.088,
-     Page write latency = 0.704,
+     Page write latency = 0.350,
      Block erase latency = 10,
 
      Pcm read latency = 0.00256,
      Pcm write latency = 0.320,
-     Pcm block percentage = 20
+     Pcm block percentage = 20,
+
+     Read disturb threshold = 40000
 }  # end of SSD spec
 
 

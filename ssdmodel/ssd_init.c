@@ -213,7 +213,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     }
 
 #ifdef PN_SSD
-    metadata->hot_size = pcm_usable_blocks / 10;
+    metadata->hot_size = 1; // pcm_usable_blocks / 10;
 
     metadata->hot_table = (int *)malloc(metadata->hot_size * sizeof(int));
     for(i = 0; i < metadata->hot_size; i++) {
@@ -298,7 +298,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
             exit(1);
         }
 
-        if(i % (usable_blocks / pcm_usable_blocks) == 0) {
+        if(i % (usable_blocks / pcm_usable_blocks) == 0 && i < usable_blocks) {
             metadata->block_usage[i].nBlocktype = PCM_TYPE;
         } else {
             metadata->block_usage[i].nBlocktype = NAND_TYPE;

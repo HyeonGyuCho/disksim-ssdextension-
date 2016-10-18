@@ -147,6 +147,14 @@ INIT result->params.pcm_blocks = d;
 
 This specifies the pcm block ratio over total capacity.
 
+PARAM Read disturb threshold		D	1
+TEST (d >= 0)
+INIT result->params.read_threshold = d;
+
+This specifies the time taken to write a pcm page from the package
+register into the flash memory (in ms).
+
+
 PARAM Write policy			I	1
 TEST (i >= 0)
 INIT result->params.write_policy = i;

@@ -586,15 +586,44 @@ static ioreq_event * iotrace_ascii_get_ioreq_event (FILE *tracefile, ioreq_event
 {
    char line[201];
 
+   static int iteration = 10, addtime = 0;
+
    if (fgets(line, 200, tracefile) == NULL) {
-      addtoextraq((event *) new);
-      return(NULL);
+       if (iteration == 0){
+           addtoextraq((event *) new);
+           return(NULL);
+       }
+       else {
+           iteration--;
+           fseek(tracefile, 0, SEEK_SET);
+           addtime = new->time;
+           fgets(line, 200, tracefile);
+       }
    }
    if (sscanf(line, "%lf %d %d %d %x\n", &new->time, &new->devno, &new->blkno, &new->bcount, &new->flags) != 5) {
-      fprintf(stderr, "Wrong number of arguments for I/O trace event type\n");
-      fprintf(stderr, "line: %s", line);
-      ddbg_assert(0);
+       fprintf(stderr, "Wrong number of arguments for I/O trace event type\n");
+       fprintf(stderr, "line: %s", line);
+       ddbg_assert(0);
    }
+
+   if (addtime != 0)
+       new->time += addtime;
+
+/*original code*/ 
+#if 0  
+   if (fgets(line, 200, tracefile) == NULL) {
+       addtoextraq((event *) new);
+       return(NULL);
+   }
+ 
+   if (sscanf(line, "%lf %d %d %d %x\n", &new->time, &new->devno, &new->blkno, &new->bcount, &new->flags) != 5) {
+       fprintf(stderr, "Wrong number of arguments for I/O trace event type\n");
+       fprintf(stderr, "line: %s", line);
+       ddbg_assert(0);
+   }
+#endif
+/*original code end*/
+
    if (new->flags & ASYNCHRONOUS) {
       new->flags |= (new->flags & READ) ? TIME_LIMITED : 0;
    } else if (new->flags & SYNCHRONOUS) {
