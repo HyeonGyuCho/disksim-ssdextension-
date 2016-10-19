@@ -27,18 +27,16 @@ extern struct device_header ssd_hdr_initializer;
 #define PN_SSD                      
 #define RIA
 //#define READ_DISTURB
-//#define PAGE_MIG
 
 #ifdef PN_SSD
 #define PCM_TYPE                    1
 #define NAND_TYPE                   2
-#endif
 
-#ifdef RIA
 #define NORMAL_GC                   1
 #define RIA_GC                      2
 #define RIA_MIG                     3
 #endif
+
 
 typedef struct {
    statgen acctimestats;

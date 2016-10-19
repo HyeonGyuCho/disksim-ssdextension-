@@ -586,7 +586,8 @@ static ioreq_event * iotrace_ascii_get_ioreq_event (FILE *tracefile, ioreq_event
 {
    char line[201];
 
-   static int iteration = 10, addtime = 0;
+   static int iteration = 0; 
+   static double addtime = 0;
 
    if (fgets(line, 200, tracefile) == NULL) {
        if (iteration == 0){
@@ -606,8 +607,9 @@ static ioreq_event * iotrace_ascii_get_ioreq_event (FILE *tracefile, ioreq_event
        ddbg_assert(0);
    }
 
-   if (addtime != 0)
-       new->time += addtime;
+   if (addtime != 0) {
+       new->time += 1.1*addtime;
+   }
 
 /*original code*/ 
 #if 0  

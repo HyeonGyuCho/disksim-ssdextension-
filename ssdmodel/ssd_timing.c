@@ -234,9 +234,7 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
     //return 0;
     return cost;
 }
-#endif
 
-#ifdef READ_DISTURB
 double read_disturb_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num, int blk, int MOVE) {
     int i;
     double cost = 0;
@@ -991,13 +989,13 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
 #ifdef PN_SSD
                     metadata->block_usage[read_block].num_read_count++;
                     metadata->block_usage[read_block].page_read_count[ppage_pos]++;
-#ifdef READ_DISTURB
+#ifdef RIA
                     if(hot_table_full(metadata)) {
-#ifndef RIA
+#ifdef READ_DISTURB
                         parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
 #else
                         double hot_migration_cost = hot_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
-                        if(hot_migrationi_cost != 0)
+                        if(hot_migration_cost != 0)
                             parunit_op_cost[i] += hot_migration_cost;
                         else
                             parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
