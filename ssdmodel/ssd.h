@@ -26,7 +26,7 @@ extern struct device_header ssd_hdr_initializer;
 
 #define PN_SSD                      
 #define RIA
-//#define READ_DISTURB
+#define READ_DISTURB
 
 #ifdef PN_SSD
 #define PCM_TYPE                    1
@@ -93,6 +93,7 @@ typedef struct _block_metadata {
 #ifdef PN_SSD
     int         nBlocktype;             // PCM: 1, NAND: 2
     int         num_read_count;         // the number of block read count
+    int         log_read_count;         // logical block read count which is refreshed at the specific period
     int         *page_read_count;       // page read count table
 #endif
 

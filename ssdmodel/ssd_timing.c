@@ -12,9 +12,10 @@
 void hot_table_clean(ssd_element_metadata *metadata) {
     int i;
 
-    for(i = 0; i < metadata->hot_size; i++) {
+    for(i = 0; i < metadata->hot_size; i++) 
         metadata->hot_table[i] = -1;
-    }
+    for(i = 0; i < s->params.blocks_per_element; i++)
+        metadata->block_usage[i].log_read_count = 0;
 }
 
 void hot_table_add(ssd_t *s, int read_block, ssd_element_metadata *metadata) {
@@ -62,10 +63,10 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
     // Calculate PRAM average read count
     // Search PRAM block which has the lowest read count
     for(i = 0; i < metadata->pcm_usable_blocks; i++) {
-        read_count += metadata->block_usage[i * interval_pcm].num_read_count;
+        read_count += metadata->block_usage[i * interval_pcm].log_read_count;
 
-        if(metadata->block_usage[i * interval_pcm].num_read_count <= min_read_count) {
-            min_read_count = metadata->block_usage[i * interval_pcm].num_read_count;
+        if(metadata->block_usage[i * interval_pcm].log_read_count <= min_read_count) {
+            min_read_count = metadata->block_usage[i * interval_pcm].log_read_count;
             pcm_blk = i * interval_pcm;
         }
     }
@@ -81,8 +82,8 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
         // Search NAND block which has max read count
         for(i = 0; i < metadata->hot_size; i++) {
             index_blk = metadata->hot_table[i];
-            if(metadata->block_usage[index_blk].num_read_count > max_read_count) {
-                max_read_count = metadata->block_usage[index_blk].num_read_count;
+            if(metadata->block_usage[index_blk].log_read_count > max_read_count) {
+                max_read_count = metadata->block_usage[index_blk].log_read_count;
                 nand_blk = index_blk;
             }
         }
@@ -98,7 +99,7 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
                 nand_pagepos = nand_page % s->params.pages_per_block;
             }
 
-            min_read_count = metadata->block_usage[pcm_blk].num_read_count;
+            min_read_count = metadata->block_usage[pcm_blk].log_read_count;
             if (metadata->block_usage[pcm_blk].page_read_count[i] <= min_read_count) {
                 min_read_count = metadata->block_usage[pcm_blk].page_read_count[i];
                 pcm_lpn = metadata->block_usage[pcm_blk].page[i];
@@ -114,7 +115,7 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
     }
 
     // Calculate read count    
-    metadata->block_usage[pcm_blk].num_read_count = metadata->block_usage[nand_blk].num_read_count;
+    //metadata->block_usage[pcm_blk].log_read_count = metadata->block_usage[nand_blk].log_read_count;
     metadata->block_usage[nand_blk].num_read_count = 0;
 
     unsigned int active_page;
@@ -240,16 +241,15 @@ double read_disturb_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num,
     double cost = 0;
     int read_count = 0;
     int max_read_count = 0;
-    int page_max_read_count = 0;
-    int index_blk;
+    int index_blk = -1;
     int nand_blk = -1;
     int nand_lpn = -1;
 
     // Search NAND block which has max read count
     for(i = 0; i < metadata->hot_size; i++) {
         index_blk = metadata->hot_table[i];
-        if(metadata->block_usage[index_blk].num_read_count > max_read_count) {
-            max_read_count = metadata->block_usage[index_blk].num_read_count;
+        if(metadata->block_usage[index_blk].log_read_count > max_read_count) {
+            max_read_count = metadata->block_usage[index_blk].log_read_count;
             nand_blk = index_blk;
         }
     }
@@ -612,15 +612,11 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
                 metadata->block_usage[prev_block].num_valid --;
                 metadata->plane_meta[prev_plane].valid_pages --;
                 ssd_assert_valid_pages(prev_plane, metadata, s);
-#ifdef PN_SSD
+#ifdef PAGE_MIG
                 metadata->block_usage[prev_block].num_read_count -= metadata->block_usage[prev_block].page_read_count[pagepos_in_prev_block];
                 metadata->block_usage[prev_block].page_read_count[pagepos_in_prev_block] = 0;
-            } else {
-                s->stat.tot_pcm_write_count ++;
-                cost = s->params.pcm_write_latency;
-                return cost;
-            }
 #endif
+            }
         }
     } else {
         fprintf(stderr, "Error: This case should not be executed\n");
@@ -645,10 +641,8 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
     // add the cost of the write
 #ifdef PN_SSD
     s->stat.tot_nand_write_count ++;
-    cost = s->params.page_write_latency;
-#else
-    cost = s->params.page_write_latency;
 #endif
+    cost = s->params.page_write_latency;
     //printf("lpn %d active pg %d\n", lpn, active_page);
 
     // go to the next free page
@@ -982,13 +976,18 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                 lpn = ssd_logical_pageno(r->blk, s);
 #ifdef PN_SSD
                 ppage      = metadata->lba_table[lpn];
-                ppage_pos  = ppage % s->params.pages_per_block;
                 read_block = SSD_PAGE_TO_BLOCK(ppage, s);
+#ifdef PAGE_MIG
+                ppage_pos  = ppage % s->params.pages_per_block;
+#endif
 #endif
                 if (r->is_read) {
 #ifdef PN_SSD
                     metadata->block_usage[read_block].num_read_count++;
+                    metadata->block_usage[read_block].log_read_count++;
+#ifdef PAGE_MIG
                     metadata->block_usage[read_block].page_read_count[ppage_pos]++;
+#endif
 #ifdef RIA
                     if(hot_table_full(metadata)) {
 #ifdef READ_DISTURB

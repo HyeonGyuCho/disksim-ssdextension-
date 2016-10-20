@@ -522,9 +522,6 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
     int size;
     int block = -1;
     int min_valid = s->params.pages_per_block - 1; // one page goes for the summary info
-#ifdef RIA
-    int max_read_count = metadata->pcm_avg_read_count;
-#endif
     listnode *greedy_list;
 
     *mcost = 0;
@@ -557,7 +554,7 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
                 ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
                 min_valid = metadata->block_usage[i].num_valid;
                 
-                if (metadata->block_usage[i].num_read_count >= metadata->pcm_avg_read_count) {
+                if (metadata->block_usage[i].log_read_count >= metadata->pcm_avg_read_count) {
                     block = i;
                 } else {
                     block = -1;

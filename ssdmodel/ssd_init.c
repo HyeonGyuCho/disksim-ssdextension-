@@ -291,6 +291,7 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
         metadata->block_usage[i].bsn = 0;
 #ifdef PN_SSD
         metadata->block_usage[i].num_read_count = 0;
+        metadata->block_usage[i].log_read_count = 0;
         
         if ((metadata->block_usage[i].page_read_count = (int *) calloc(currdisk->params.pages_per_block, sizeof(int))) == NULL) {
             fprintf(stderr, "Error: malloc to page read count table in ssd_block_metadata_init failed\n");
