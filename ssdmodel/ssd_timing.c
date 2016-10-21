@@ -9,7 +9,7 @@
 #include "modules/ssdmodel_ssd_param.h"
 
 #ifdef RIA
-void hot_table_clean(ssd_element_metadata *metadata) {
+void hot_table_clean(ssd_t *s, ssd_element_metadata *metadata) {
     int i;
 
     for(i = 0; i < metadata->hot_size; i++) 
@@ -259,6 +259,8 @@ double read_disturb_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num,
 
     // Calculate read count    
     metadata->block_usage[nand_blk].num_read_count = 0;
+
+    s->stat.tot_rd_mig++;
 
     unsigned int active_page;
     unsigned int active_block;
@@ -598,7 +600,7 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
         unsigned int prev_plane = metadata->block_usage[prev_block].plane_num;
 
         // make sure the version numbers are correct
-        ssd_assert_page_version(prev_page, active_page, metadata, s);
+        //ssd_assert_page_version(prev_page, active_page, metadata, s);
 
         if (metadata->block_usage[prev_block].page[pagepos_in_prev_block] != lpn) {
             fprintf(stderr, "Error: lpn %d not found in prev block %d pos %d\n",
@@ -999,7 +1001,7 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                         else
                             parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
 #endif
-                        hot_table_clean(metadata);
+                        hot_table_clean(s, metadata);
                     } else if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
                         hot_table_add(s, read_block, metadata);
                     }

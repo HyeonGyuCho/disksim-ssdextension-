@@ -48,6 +48,7 @@ typedef struct {
    int     tot_nand_read_count;
    int     tot_pcm_write_count;
    int     tot_nand_write_count;
+   int     tot_rd_mig;
    int     tot_ria_mig;
    int     tot_ria_gc;
    int     tot_ria_pcm_write_count;

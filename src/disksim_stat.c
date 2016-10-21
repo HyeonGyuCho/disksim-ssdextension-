@@ -368,7 +368,7 @@ void stat_print_set (statgen **statset, int statcnt, char *identstr)
       fprintf(outputfile, " %6d ", smalldistvals[i]);
    }
    fprintf(outputfile, "\n");
-   ASSERT2(count == runcount, "count", count, "runcount", runcount);
+//   ASSERT2(count == runcount, "count", count, "runcount", runcount);
 }
 
 
