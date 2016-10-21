@@ -618,11 +618,15 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
                 metadata->block_usage[prev_block].num_read_count -= metadata->block_usage[prev_block].page_read_count[pagepos_in_prev_block];
                 metadata->block_usage[prev_block].page_read_count[pagepos_in_prev_block] = 0;
 #endif
+#ifdef PN_SSD
+            } else {
+                cost = s->params.page_write_latency;
+                s->stat.tot_pcm_write_count ++;
+                return cost;                
             }
+#endif
         }
-    } else {
-        fprintf(stderr, "Error: This case should not be executed\n");
-    }
+    } 
 
     // add the entry to the lba table
     metadata->lba_table[lpn] = active_page;
