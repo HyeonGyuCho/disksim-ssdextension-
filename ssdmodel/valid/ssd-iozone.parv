@@ -122,14 +122,14 @@ Print stats =  1
 # the queue (disksim_ioqueue)
 ssdmodel_ssd SSD {
      # vp - this is a percentage of total pages in the ssd
-     Reserve pages percentage = 15,
+     Reserve pages percentage = 20,
 
      # vp - min percentage of free blocks needed. if the free 
      # blocks drop below this, cleaning kicks in
-     Minimum free blocks percentage = 4,
+     Minimum free blocks percentage = 17,
 
      # if the free blocks drop below this, ria_gc start
-     Read intensity aware GC = 6,
+     Read intensity aware GC = 19,
 
      # vp - a simple read-modify-erase-write policy = 1 (no longer supported)
      # vp - osr write policy = 2
@@ -139,10 +139,10 @@ ssdmodel_ssd SSD {
      Cleaning policy = 2,
 
      # vp - number of planes in each flash package (element)
-     Planes per package = 16,
+     Planes per package = 8,
 
      # vp - number of flash blocks in each plane
-     Blocks per plane = 4096,
+     Blocks per plane = 2048,
 
      # vp - how the blocks within an element are mapped on a plane
      # simple concatenation = 1, plane-pair stripping = 2 (not tested),
@@ -186,7 +186,7 @@ ssdmodel_ssd SSD {
      Pages per block = 192,
 
      # vp - changing the no of blocks from 16184 to 16384
-     Blocks per element = 65536,
+     Blocks per element = 16384,
 
      Element stride pages = 1,
 
@@ -218,7 +218,7 @@ ssdmodel_ssd SSD {
 #     Block erase latency = 1.5,
 
      Page read latency = 0.100,
-     Page write latency = 1.600,
+     Page write latency = 0.600,
      Block erase latency = 5,
 
      Pcm read latency = 0.010,

@@ -25,8 +25,8 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_BITS_ELEMS_PER_GANG     8
 
 #define PN_SSD                      
-#define RIA
-#define READ_DISTURB
+//#define RIA
+//#define READ_DISTURB
 
 #ifdef PN_SSD
 #define PCM_TYPE                    1
@@ -50,6 +50,7 @@ typedef struct {
    int     tot_nand_write_count;
    int     tot_rd_mig;
    int     tot_ria_mig;
+   int     tot_normal_gc;
    int     tot_ria_gc;
    int     tot_ria_pcm_write_count;
    int     tot_ria_nand_write_count;
@@ -343,6 +344,8 @@ typedef struct _ssd_timing_params {
     double pcm_blocks;                  // PCM blocks over total capacity
 
     double read_threshold;              // Read disturb threshold
+    int    logical_clean_interval;      // logical block read count clean interval
+    int    ria_gc_trigger;              // ria gc trigger division
 
     int     write_policy;               // policy followed when writing a block
                                         // follow the above definitions

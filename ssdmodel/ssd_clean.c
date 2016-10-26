@@ -68,6 +68,7 @@ static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, 
 #ifdef RIA
             if (clean_req == RIA_GC) {
                 cost += hot_move(s, metadata, elem_num, plane_num, from_blk, clean_req);
+                return cost;
             } else {
                 if (ssd_last_page_in_block(metadata->active_page, s)) {
                     _ssd_alloc_active_block(plane_num, elem_num, s);
@@ -546,10 +547,11 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
                 ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
                 min_valid = metadata->block_usage[i].num_valid;
                 block = i;
+                s->stat.tot_normal_gc++;
             }
 #ifdef RIA
         } else {
-            if (metadata->block_usage[i].num_valid <= min_valid) {
+            if (metadata->block_usage[i].num_valid <= s->params.pages_per_block / s->params.ria_gc_trigger) {
                 ASSERT(i == metadata->block_usage[i].block_num);
                 ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
                 min_valid = metadata->block_usage[i].num_valid;

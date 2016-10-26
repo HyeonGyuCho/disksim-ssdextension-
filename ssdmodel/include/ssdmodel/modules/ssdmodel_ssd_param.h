@@ -35,6 +35,8 @@ typedef enum {
    SSDMODEL_SSD_PCM_WRITE_LATENCY,
    SSDMODEL_SSD_PCM_BLOCK_PERCENTAGE,
    SSDMODEL_SSD_READ_DISTURB_THRESHOLD,
+   SSDMODEL_SSD_LOGICAL_CLEAN_INTERVAL,
+   SSDMODEL_SSD_RIA_GC_TRIGGER,
    SSDMODEL_SSD_WRITE_POLICY,
    SSDMODEL_SSD_RESERVE_PAGES_PERCENTAGE,
    SSDMODEL_SSD_MINIMUM_FREE_BLOCKS_PERCENTAGE,
@@ -79,6 +81,8 @@ static struct lp_varspec ssdmodel_ssd_params [] = {
    {"Pcm write latency", D, 1 },
    {"Pcm block percentage", D, 1 },
    {"Read disturb threshold", D, 1 },
+   {"Logical clean interval", I, 1 },
+   {"Ria gc trigger", I, 1 },
    {"Write policy", I, 1 },
    {"Reserve pages percentage", I, 1 },
    {"Minimum free blocks percentage", I, 1 },
@@ -94,7 +98,7 @@ static struct lp_varspec ssdmodel_ssd_params [] = {
    {"Allocation pool logic", I, 1 },
    {0,0,0}
 };
-#define SSDMODEL_SSD_MAX 36
+#define SSDMODEL_SSD_MAX 38
 static struct lp_mod ssdmodel_ssd_mod = { "ssdmodel_ssd", ssdmodel_ssd_params, SSDMODEL_SSD_MAX, (lp_modloader_t)ssdmodel_ssd_loadparams,  0, 0, SSDMODEL_SSD_loaders, SSDMODEL_SSD_deps };
 
 

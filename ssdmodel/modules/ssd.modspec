@@ -151,9 +151,19 @@ PARAM Read disturb threshold		D	1
 TEST (d >= 0)
 INIT result->params.read_threshold = d;
 
-This specifies the time taken to write a pcm page from the package
-register into the flash memory (in ms).
+This specifies the NAND read disturb threshold.
 
+PARAM Logical clean interval			I	1
+TEST (i >= 0)
+INIT result->params.logical_clean_interval = i;
+
+This specifies the logical block read count clean interval.
+
+PARAM Ria gc trigger			I	1
+TEST (i >= 0)
+INIT result->params.ria_gc_trigger = i;
+
+This specifies the ria gc trigger division number.
 
 PARAM Write policy			I	1
 TEST (i >= 0)

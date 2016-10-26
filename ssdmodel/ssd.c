@@ -1161,6 +1161,7 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    int nand_write_count = 0;
    int rd_mig = 0;
    int ria_mig = 0;
+   int normal_gc = 0;
    int ria_gc = 0;
    int ria_pcm_write_count = 0;
    int ria_nand_write_count = 0;
@@ -1177,6 +1178,7 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
       nand_write_count += currdisk->stat.tot_nand_write_count;
       rd_mig += currdisk->stat.tot_rd_mig;
       ria_mig += currdisk->stat.tot_ria_mig;
+      normal_gc += currdisk->stat.tot_normal_gc;
       ria_gc += currdisk->stat.tot_ria_gc;
       ria_pcm_write_count += currdisk->stat.tot_ria_pcm_write_count;
       ria_nand_write_count += currdisk->stat.tot_ria_nand_write_count;
@@ -1193,6 +1195,7 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    fprintf(outputfile, "%sNumber of nand write count: \t%d\n", prefix, nand_write_count);
    fprintf(outputfile, "%sNumber of rd mig: \t%d\n", prefix, rd_mig);
    fprintf(outputfile, "%sNumber of ria mig: \t%d\n", prefix, ria_mig);
+   fprintf(outputfile, "%sNumber of normal gc: \t%d\n", prefix, normal_gc);
    fprintf(outputfile, "%sNumber of ria gc: \t%d\n", prefix, ria_gc);
    fprintf(outputfile, "%sNumber of ria pcm write count: \t%d\n", prefix, ria_pcm_write_count);
    fprintf(outputfile, "%sNumber of ria nand write count: \t%d\n", prefix, ria_nand_write_count);

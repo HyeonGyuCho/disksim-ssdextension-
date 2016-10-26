@@ -32,6 +32,7 @@ static void ssd_statinit (int devno, int firsttime)
    currdisk->stat.tot_nand_write_count = 0;
    currdisk->stat.tot_rd_mig           = 0;
    currdisk->stat.tot_ria_mig              = 0;
+   currdisk->stat.tot_normal_gc               = 0;
    currdisk->stat.tot_ria_gc               = 0;
    currdisk->stat.tot_ria_pcm_write_count  = 0;
    currdisk->stat.tot_ria_nand_write_count = 0;

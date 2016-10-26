@@ -586,7 +586,7 @@ static ioreq_event * iotrace_ascii_get_ioreq_event (FILE *tracefile, ioreq_event
 {
    char line[201];
 
-   static int iteration = 9; 
+   static int iteration = 4; 
    static double addtime = 0;
 
    if (fgets(line, 200, tracefile) == NULL) {
