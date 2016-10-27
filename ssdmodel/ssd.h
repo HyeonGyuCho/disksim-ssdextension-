@@ -161,7 +161,7 @@ typedef struct _ssd_element_metadata {
 #ifdef PN_SSD
     int *hot_table;                 // a table including the hottest block info
     int hot_size;                   // hot region size
-    int pcm_avg_read_count;         // PRAM average read count 
+    unsigned int pcm_avg_read_count;         // PRAM average read count 
     int pcm_min_read_count;         // PRAM block which has max read count
     int pcm_usable_blocks;          // The number of PRAM block 
     int pcm_interval;               // PRAM interval;

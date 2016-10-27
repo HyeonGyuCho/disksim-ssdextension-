@@ -68,6 +68,7 @@ static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, 
 #ifdef RIA
             if (clean_req == RIA_GC) {
                 cost += hot_move(s, metadata, elem_num, plane_num, from_blk, clean_req);
+                hot_table_clean(s, metadata);
                 return cost;
             } else {
                 if (ssd_last_page_in_block(metadata->active_page, s)) {
@@ -551,11 +552,11 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
                 }
 #ifdef RIA
             } else {
-                if (metadata->block_usage[i].num_valid <= s->params.pages_per_block / s->params.ria_gc_trigger) {
+                if (metadata->block_usage[i].num_valid <= (s->params.pages_per_block / s->params.ria_gc_trigger)) {
                     ASSERT(i == metadata->block_usage[i].block_num);
                     ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
                     
-                    if (metadata->block_usage[i].log_read_count >= metadata->pcm_avg_read_count) {
+                    if ((metadata->block_usage[i].log_read_count / metadata->block_usage[i].num_valid) >= metadata->pcm_avg_read_count) {
                         block = i;
                     } else {
                         block = -1;
