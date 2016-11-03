@@ -555,13 +555,16 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
                 if (metadata->block_usage[i].num_valid <= (s->params.pages_per_block / s->params.ria_gc_trigger)) {
                     ASSERT(i == metadata->block_usage[i].block_num);
                     ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
-                    
-                    if ((metadata->block_usage[i].log_read_count / metadata->block_usage[i].num_valid) >= metadata->pcm_avg_read_count) {
-                        block = i;
+                   
+                    if(metadata->block_usage[i].num_valid != 0){
+                        if ((metadata->block_usage[i].log_read_count / metadata->block_usage[i].num_valid) >= metadata->pcm_avg_read_count) {
+                            block = i;
+                        } else {
+                            block = -1;
+                        }
                     } else {
-                        block = -1;
+                        block = i;
                     }
-
                 }
             }
 #endif

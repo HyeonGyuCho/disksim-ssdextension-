@@ -8,7 +8,7 @@
 #include "ssd_utils.h"
 #include "modules/ssdmodel_ssd_param.h"
 
-#ifdef RIA
+#ifdef PN_SSD
 void hot_table_clean(ssd_t *s, ssd_element_metadata *metadata) {
     int i;
     static int logical_clean = 0;
@@ -1009,9 +1009,8 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
 #ifdef PAGE_MIG
                     metadata->block_usage[read_block].page_read_count[ppage_pos]++;
 #endif
-#ifdef RIA
                     if(hot_table_full(metadata)) {
-#ifdef READ_DISTURB
+#ifndef RIA
                         parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
 #else
                         double hot_migration_cost = hot_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
@@ -1024,7 +1023,7 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                     } else if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
                         hot_table_add(s, read_block, metadata);
                     }
-#endif
+
                     if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
                         parunit_op_cost[i] += s->params.page_read_latency;
                         s->stat.tot_pcm_read_count ++;

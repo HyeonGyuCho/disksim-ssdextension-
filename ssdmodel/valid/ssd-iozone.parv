@@ -126,10 +126,10 @@ ssdmodel_ssd SSD {
 
      # vp - min percentage of free blocks needed. if the free 
      # blocks drop below this, cleaning kicks in
-     Minimum free blocks percentage = 17,
+     Minimum free blocks percentage = 15,
 
      # if the free blocks drop below this, ria_gc start
-     Read intensity aware GC = 19,
+     Read intensity aware GC = 18,
 
      # vp - a simple read-modify-erase-write policy = 1 (no longer supported)
      # vp - osr write policy = 2
@@ -139,7 +139,7 @@ ssdmodel_ssd SSD {
      Cleaning policy = 2,
 
      # vp - number of planes in each flash package (element)
-     Planes per package = 8,
+     Planes per package = 4,
 
      # vp - number of flash blocks in each plane
      Blocks per plane = 2048,
@@ -179,14 +179,14 @@ ssdmodel_ssd SSD {
 #    from disksim_bus above.
      Bulk sector transfer time =  0,
 
-     Flash chip elements = 8,
+     Flash chip elements = 4,
 
      Page size = 8,
 
      Pages per block = 192,
 
      # vp - changing the no of blocks from 16184 to 16384
-     Blocks per element = 16384,
+     Blocks per element = 8192,
 
      Element stride pages = 1,
 
@@ -225,7 +225,9 @@ ssdmodel_ssd SSD {
      Pcm write latency = 0.100,
      Pcm block percentage = 20,
 
-     Read disturb threshold = 38000
+     Read disturb threshold = 38000,
+     Logical clean interval = 20,
+     Ria gc trigger         = 10
 }  # end of SSD spec
 
 # component instantiation
