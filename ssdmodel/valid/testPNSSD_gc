@@ -1,0 +1,63 @@
+#!/bin/bash
+
+if [ "x${RUNVALID_PREFIX}" != "x" ];
+then
+PREFIX=${RUNVALID_PREFIX}
+else
+PREFIX=../../src
+fi
+
+CVTPATH=~/01_PN_SSD/ssdmodel/testPNSSD/fast_test/spc_trace
+#CVTPATH=
+#CVTPATH=~/00_svn/users/donghwan/spc_trace
+#echo "PCM NAND Hybrid SSD simulation test"
+#echo ""
+
+#echo "Making..."
+#make clean -s -C ../../
+#make -s -C ../../
+
+set -- `getopt g $*`
+for i
+do
+    case "$i"
+    in
+        -g)
+            echo "gdb --args ../../src/disksim ssd-iozone.parv ssd-iozone.outv ascii" $3 "0";
+            echo "";
+            cgdb --args $PREFIX/disksim_gc_3 ssd-iozone-ria.parv ssd-iozone-ria.outv ascii $3 0;
+            break;;
+        --)
+#            echo $2;
+#            $PREFIX/disksim ssd-iozone.parv ssd-iozone.outv ascii $2 0;
+#            grep "ssd Response time average:" ssd-iozone.outv | grep -v "#"
+            for trace in cvt_reCFS cvt_reDAP reDADS 
+            do
+                for iter in 1 3 5 10 50 100 150 200
+                do
+                echo "${iter} ${trace}"
+                $PREFIX/disksim_gc_${iter} ssd-iozone-gc.parv ssd-iozone-gc.outv ascii ${trace}.trace 0
+                grep "ssd Number of pcm read count:" ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of nand read count:" ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of pcm write count:" ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of nand write count:" ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of rd mig:"  ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of ria mig:"  ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of normal gc:"  ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of ria gc:"  ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of ria pcm write count:"  ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Number of ria nand write count:"  ssd-iozone-gc.outv | grep -v "#"
+                grep "ssd Response time average:"  ssd-iozone-gc.outv | grep -v "#"
+                cp ssd-iozone-gc.outv gc_result/${iter}_${trace}.outv
+                free && sync && echo 3 > /proc/sys/vm/drop_caches && free
+                done
+            done
+#            echo "cvt_Financial1";
+#            $PREFIX/disksim ssd-iozone.parv ssd-iozone.outv ascii cvt_Financial1.trace 0;
+#            grep "ssd Response time average:" ssd-iozone.outv | grep -v "#"
+#            echo "cvt_Financial2";
+#            $PREFIX/disksim ssd-iozone.parv ssd-iozone.outv ascii cvt_Financial2.trace 0;
+#            grep "ssd Response time average:" ssd-iozone.outv | grep -v "#"
+            break;;
+     esac
+done
