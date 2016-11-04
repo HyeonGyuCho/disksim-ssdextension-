@@ -194,7 +194,9 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
 
             cost += s->params.pcm_read_latency;
             cost += s->params.page_write_latency;
+            s->stat.tot_pcm_read_count ++;
             s->stat.tot_nand_write_count ++;
+
             if (MOVE == RIA_GC)
                 s->stat.tot_ria_nand_write_count ++;
 
@@ -205,9 +207,15 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
                 metadata->block_usage[pcm_blk].page[i] = nand_lpn;
 #else
             metadata->block_usage[pcm_blk].page[i] = nand_lpn;
-#endif 
+#endif
+            if (MOVE != RIA_GC) { 
+                cost += s->params.page_read_latency; 
+                s->stat.tot_nand_read_count ++;
+            }
+
             cost += s->params.pcm_write_latency; 
             s->stat.tot_pcm_write_count ++;
+
             if (MOVE == RIA_GC)
                 s->stat.tot_ria_pcm_write_count ++;
 
@@ -246,6 +254,7 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
 #endif 
         }
     } while(++i < s->params.pages_per_block - 1);
+    return 0;
     return cost;
 }
 
@@ -294,10 +303,13 @@ double read_disturb_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num,
             // issue the write to the current active page.
             // we need to transfer the data across the serial pins for write.
             metadata->active_page = metadata->plane_meta[plane_num].active_page;
-
+            
+            s->stat.tot_nand_read_count ++;
+            cost += s->params.page_read_latency; 
             cost += _ssd_write_page_osr(s, metadata, nand_lpn);
         }
     } while(++i < s->params.pages_per_block - 1);
+    return 0;
     return cost;
 }
 #endif
@@ -1009,6 +1021,9 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
 #ifdef PAGE_MIG
                     metadata->block_usage[read_block].page_read_count[ppage_pos]++;
 #endif
+                    if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) 
+                        hot_table_add(s, read_block, metadata);
+                    
                     if(hot_table_full(metadata)) {
 #ifndef RIA
                         parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
@@ -1020,16 +1035,14 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                             parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
 #endif
                         hot_table_clean(s, metadata);
-                    } else if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
-                        hot_table_add(s, read_block, metadata);
-                    }
-
-                    if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
-                        parunit_op_cost[i] += s->params.page_read_latency;
-                        s->stat.tot_pcm_read_count ++;
-                    } else {
-                        parunit_op_cost[i] += s->params.pcm_read_latency;
-                        s->stat.tot_nand_read_count ++;
+                    } else { 
+                        if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
+                            parunit_op_cost[i] += s->params.page_read_latency;
+                            s->stat.tot_nand_read_count ++;
+                        } else {
+                            parunit_op_cost[i] += s->params.pcm_read_latency;
+                            s->stat.tot_pcm_read_count ++;
+                        }
                     }
 #else
                     parunit_op_cost[i] = s->params.page_read_latency;

@@ -31,9 +31,9 @@ do
 #            echo $2;
 #            $PREFIX/disksim ssd-iozone.parv ssd-iozone.outv ascii $2 0;
 #            grep "ssd Response time average:" ssd-iozone.outv | grep -v "#"
-            for trace in cvt_WebSearch1 cvt_WebSearch2 cvt_WebSearch3
+            for trace in cvt_reCFS cvt_WebSearch1 cvt_WebSearch2 cvt_WebSearch3
             do
-                for iter in 1 5 10 50 100 150 200
+                for iter in 1 
                 do
                 echo "${iter} ${trace}"
                 $PREFIX/disksim_ria_${iter} ssd-iozone-ria.parv ssd-iozone-ria.outv ascii ${trace}.trace 0

@@ -139,7 +139,7 @@ ssdmodel_ssd SSD {
      Cleaning policy = 2,
 
      # vp - number of planes in each flash package (element)
-     Planes per package = 4,
+     Planes per package = 8,
 
      # vp - number of flash blocks in each plane
      Blocks per plane = 2048,
@@ -186,7 +186,7 @@ ssdmodel_ssd SSD {
      Pages per block = 192,
 
      # vp - changing the no of blocks from 16184 to 16384
-     Blocks per element = 8192,
+     Blocks per element = 16384,
 
      Element stride pages = 1,
 
@@ -225,7 +225,7 @@ ssdmodel_ssd SSD {
      Pcm write latency = 0.100,
      Pcm block percentage = 20,
 
-     Read disturb threshold = 38000,
+     Read disturb threshold = 1000,
      Logical clean interval = 20,
      Ria gc trigger         = 10
 }  # end of SSD spec

@@ -107,8 +107,10 @@ static double ssd_clean_one_page (int lp_num, int pp_index, int blk, int plane_n
 {    double cost = 0;
     double xfer_cost = 0;
 
+
     cost += s->params.page_read_latency;
 #ifdef RIA
+    s->stat.tot_nand_read_count++;
     cost += ssd_move_page(lp_num, blk, plane_num, elem_num, s, clean_req);
 #else
     cost += ssd_move_page(lp_num, blk, plane_num, elem_num, s);
@@ -553,18 +555,20 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
 #ifdef RIA
             } else {
                 if (metadata->block_usage[i].num_valid <= (s->params.pages_per_block / s->params.ria_gc_trigger)) {
-                    ASSERT(i == metadata->block_usage[i].block_num);
-                    ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
-                   
                     if(metadata->block_usage[i].num_valid != 0){
                         if ((metadata->block_usage[i].log_read_count / metadata->block_usage[i].num_valid) >= metadata->pcm_avg_read_count) {
+                            ASSERT(i == metadata->block_usage[i].block_num);
+                            ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
                             block = i;
                         } else {
                             block = -1;
                         }
-                    } else {
-                        block = i;
                     }
+                   /* else {
+                        ASSERT(i == metadata->block_usage[i].block_num);
+                        ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
+                        block = i;
+                    }*/
                 }
             }
 #endif
@@ -805,7 +809,7 @@ static double ssd_clean_block_fully(int plane_num, int elem_num, ssd_t *s)
     blk = ssd_pick_block_to_clean(plane_num, elem_num, &mcost, metadata, s, clean_req);
 
     if (clean_req == RIA_GC && blk == -1) {
-        cost = 0;
+        return (cost+mcost);
     } else {
         ASSERT(metadata->block_usage[blk].plane_num == plane_num);
         cost = _ssd_clean_block_fully(blk, plane_num, elem_num, metadata, s, clean_req);
