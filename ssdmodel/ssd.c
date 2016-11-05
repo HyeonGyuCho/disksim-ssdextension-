@@ -1159,12 +1159,26 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    int nand_read_count = 0;
    int pcm_write_count = 0;
    int nand_write_count = 0;
+   
    int rd_mig = 0;
+   int rd_nand_read_count = 0;
+   int rd_nand_write_count = 0;
+   
    int ria_mig = 0;
-   int normal_gc = 0;
+   int ria_mig_pcm_read_count = 0;
+   int ria_mig_nand_read_count = 0;
+   int ria_mig_pcm_write_count = 0;
+   int ria_mig_nand_write_count = 0;
+   
+   int normal_gc = 0; 
+   int gc_nand_read_count = 0;
+   int gc_nand_write_count = 0;
+
    int ria_gc = 0;
-   int ria_pcm_write_count = 0;
-   int ria_nand_write_count = 0;
+   int ria_gc_pcm_read_count = 0;
+   int ria_gc_nand_read_count = 0;
+   int ria_gc_pcm_write_count = 0;
+   int ria_gc_nand_write_count = 0;
 #endif
 
    for (i=0; i<setsize; i++) {
@@ -1176,12 +1190,26 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
       nand_read_count += currdisk->stat.tot_nand_read_count;
       pcm_write_count += currdisk->stat.tot_pcm_write_count;
       nand_write_count += currdisk->stat.tot_nand_write_count;
+
       rd_mig += currdisk->stat.tot_rd_mig;
+      rd_nand_read_count += currdisk->stat.tot_rd_nand_read_count;
+      rd_nand_write_count += currdisk->stat.tot_rd_nand_write_count;
+
       ria_mig += currdisk->stat.tot_ria_mig;
+      ria_mig_pcm_read_count += currdisk->stat.tot_ria_mig_pcm_read_count;
+      ria_mig_nand_read_count += currdisk->stat.tot_ria_mig_nand_read_count;
+      ria_mig_pcm_write_count += currdisk->stat.tot_ria_mig_pcm_write_count;
+      ria_mig_nand_write_count += currdisk->stat.tot_ria_mig_nand_write_count;
+
       normal_gc += currdisk->stat.tot_normal_gc;
+      gc_nand_read_count += currdisk->stat.tot_gc_nand_read_count;
+      gc_nand_write_count += currdisk->stat.tot_gc_nand_write_count;
+
       ria_gc += currdisk->stat.tot_ria_gc;
-      ria_pcm_write_count += currdisk->stat.tot_ria_pcm_write_count;
-      ria_nand_write_count += currdisk->stat.tot_ria_nand_write_count;
+      ria_gc_pcm_read_count += currdisk->stat.tot_ria_gc_pcm_read_count;
+      ria_gc_nand_read_count += currdisk->stat.tot_ria_gc_nand_read_count;
+      ria_gc_pcm_write_count += currdisk->stat.tot_ria_gc_pcm_write_count;
+      ria_gc_nand_write_count += currdisk->stat.tot_ria_gc_nand_write_count;
 #endif
    }
 
@@ -1193,12 +1221,26 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    fprintf(outputfile, "%sNumber of nand read count: \t%d\n", prefix, nand_read_count);
    fprintf(outputfile, "%sNumber of pcm write count: \t%d\n", prefix, pcm_write_count);
    fprintf(outputfile, "%sNumber of nand write count: \t%d\n", prefix, nand_write_count);
+   
    fprintf(outputfile, "%sNumber of rd mig: \t%d\n", prefix, rd_mig);
+   fprintf(outputfile, "%sNumber of rd nand read count: \t%d\n", prefix, rd_nand_read_count);
+   fprintf(outputfile, "%sNumber of rd nand write count: \t%d\n", prefix, rd_nand_write_count);
+   
    fprintf(outputfile, "%sNumber of ria mig: \t%d\n", prefix, ria_mig);
+   fprintf(outputfile, "%sNumber of ria mig pcm read count: \t%d\n", prefix, ria_mig_pcm_read_count);
+   fprintf(outputfile, "%sNumber of ria mig nand read count: \t%d\n", prefix, ria_mig_nand_read_count);
+   fprintf(outputfile, "%sNumber of ria mig pcm write count: \t%d\n", prefix, ria_mig_pcm_write_count);
+   fprintf(outputfile, "%sNumber of ria mig nand write count: \t%d\n", prefix, ria_mig_nand_write_count);
+   
    fprintf(outputfile, "%sNumber of normal gc: \t%d\n", prefix, normal_gc);
+   fprintf(outputfile, "%sNumber of gc nand read count: \t%d\n", prefix, gc_nand_read_count);
+   fprintf(outputfile, "%sNumber of gc nand write count: \t%d\n", prefix, gc_nand_write_count);
+   
    fprintf(outputfile, "%sNumber of ria gc: \t%d\n", prefix, ria_gc);
-   fprintf(outputfile, "%sNumber of ria pcm write count: \t%d\n", prefix, ria_pcm_write_count);
-   fprintf(outputfile, "%sNumber of ria nand write count: \t%d\n", prefix, ria_nand_write_count);
+   fprintf(outputfile, "%sNumber of ria gc pcm read count: \t%d\n", prefix, ria_gc_pcm_read_count);
+   fprintf(outputfile, "%sNumber of ria gc nand read count: \t%d\n", prefix, ria_gc_nand_read_count);
+   fprintf(outputfile, "%sNumber of ria gc pcm write count: \t%d\n", prefix, ria_gc_pcm_write_count);
+   fprintf(outputfile, "%sNumber of ria gc nand write count: \t%d\n", prefix, ria_gc_nand_write_count);
 #endif
 
 }

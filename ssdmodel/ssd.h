@@ -26,6 +26,8 @@ extern struct device_header ssd_hdr_initializer;
 
 #define PN_SSD                      
 #define RIA
+
+#define RIA2
 //#define READ_DISTURB
 
 #ifdef PN_SSD
@@ -44,16 +46,31 @@ typedef struct {
    double  waitingforbus;
    int     numbuswaits;
 #ifdef PN_SSD
-   int     tot_pcm_read_count;
-   int     tot_nand_read_count;
-   int     tot_pcm_write_count;
-   int     tot_nand_write_count;
-   int     tot_rd_mig;
-   int     tot_ria_mig;
-   int     tot_normal_gc;
-   int     tot_ria_gc;
-   int     tot_ria_pcm_write_count;
-   int     tot_ria_nand_write_count;
+   unsigned int     tot_pcm_read_count;
+   unsigned int     tot_nand_read_count;
+   unsigned int     tot_pcm_write_count;
+   unsigned int     tot_nand_write_count;
+   
+   unsigned int     tot_rd_mig;
+   unsigned int     tot_rd_nand_read_count;
+   unsigned int     tot_rd_nand_write_count;
+   
+   
+   unsigned int     tot_ria_mig;
+   unsigned int     tot_ria_mig_pcm_read_count;
+   unsigned int     tot_ria_mig_nand_read_count;
+   unsigned int     tot_ria_mig_pcm_write_count;
+   unsigned int     tot_ria_mig_nand_write_count;
+   
+   unsigned int     tot_normal_gc;
+   unsigned int     tot_gc_nand_read_count;
+   unsigned int     tot_gc_nand_write_count;
+   
+   unsigned int     tot_ria_gc;
+   unsigned int     tot_ria_gc_pcm_read_count;
+   unsigned int     tot_ria_gc_nand_read_count;
+   unsigned int     tot_ria_gc_pcm_write_count;
+   unsigned int     tot_ria_gc_nand_write_count;
 #endif
 } ssd_stat_t;
 
@@ -161,7 +178,9 @@ typedef struct _ssd_element_metadata {
 #ifdef PN_SSD
     int *hot_table;                 // a table including the hottest block info
     int hot_size;                   // hot region size
-    unsigned int pcm_avg_read_count;         // PRAM average read count 
+    unsigned int pcm_avg_read_count;// PRAM average read count 
+    int pcm_victim_block;           // PRAM victim block
+    int pcm_victim_page_pos;        // PRAM victim page pos
     int pcm_min_read_count;         // PRAM block which has max read count
     int pcm_usable_blocks;          // The number of PRAM block 
     int pcm_interval;               // PRAM interval;

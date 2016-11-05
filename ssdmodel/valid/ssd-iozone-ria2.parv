@@ -122,14 +122,14 @@ Print stats =  1
 # the queue (disksim_ioqueue)
 ssdmodel_ssd SSD {
      # vp - this is a percentage of total pages in the ssd
-     Reserve pages percentage = 15,
+     Reserve pages percentage = 20,
 
      # vp - min percentage of free blocks needed. if the free 
      # blocks drop below this, cleaning kicks in
-     Minimum free blocks percentage = 4,
+     Minimum free blocks percentage = 17,
 
      # if the free blocks drop below this, ria_gc start
-     Read intensity aware GC = 6,
+     Read intensity aware GC = 18,
 
      # vp - a simple read-modify-erase-write policy = 1 (no longer supported)
      # vp - osr write policy = 2
@@ -179,7 +179,7 @@ ssdmodel_ssd SSD {
 #    from disksim_bus above.
      Bulk sector transfer time =  0,
 
-     Flash chip elements = 8,
+     Flash chip elements = 4,
 
      Page size = 8,
 
@@ -218,14 +218,16 @@ ssdmodel_ssd SSD {
 #     Block erase latency = 1.5,
 
      Page read latency = 0.100,
-     Page write latency = 1.600,
+     Page write latency = 0.600,
      Block erase latency = 5,
 
      Pcm read latency = 0.010,
      Pcm write latency = 0.100,
      Pcm block percentage = 20,
 
-     Read disturb threshold = 38000
+     Read disturb threshold = 38000,
+     Logical clean interval = 20,
+     Ria gc trigger         = 10
 }  # end of SSD spec
 
 # component instantiation

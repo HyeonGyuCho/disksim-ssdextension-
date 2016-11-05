@@ -30,12 +30,26 @@ static void ssd_statinit (int devno, int firsttime)
    currdisk->stat.tot_nand_read_count  = 0;
    currdisk->stat.tot_pcm_write_count  = 0;
    currdisk->stat.tot_nand_write_count = 0;
+
    currdisk->stat.tot_rd_mig           = 0;
+   currdisk->stat.tot_rd_nand_read_count  = 0;
+   currdisk->stat.tot_rd_nand_write_count = 0;
+
    currdisk->stat.tot_ria_mig              = 0;
+   currdisk->stat.tot_ria_mig_pcm_read_count   = 0;
+   currdisk->stat.tot_ria_mig_nand_read_count  = 0;
+   currdisk->stat.tot_ria_mig_pcm_write_count  = 0;
+   currdisk->stat.tot_ria_mig_nand_write_count = 0;
+   
    currdisk->stat.tot_normal_gc               = 0;
+   currdisk->stat.tot_gc_nand_read_count  = 0;
+   currdisk->stat.tot_gc_nand_write_count = 0;
+   
    currdisk->stat.tot_ria_gc               = 0;
-   currdisk->stat.tot_ria_pcm_write_count  = 0;
-   currdisk->stat.tot_ria_nand_write_count = 0;
+   currdisk->stat.tot_ria_gc_pcm_read_count   = 0;
+   currdisk->stat.tot_ria_gc_nand_read_count  = 0;
+   currdisk->stat.tot_ria_gc_pcm_write_count  = 0;
+   currdisk->stat.tot_ria_gc_nand_write_count = 0;
 #endif
 }
 
@@ -222,10 +236,12 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
         metadata->hot_table[i] = -1;
     }
     
-    metadata->pcm_avg_read_count = 0;
-    metadata->pcm_min_read_count = 0;
-    metadata->pcm_usable_blocks  = pcm_usable_blocks;
-    metadata->pcm_interval       = usable_blocks / pcm_usable_blocks;
+    metadata->pcm_avg_read_count  = 0;
+    metadata->pcm_min_read_count  = 0;
+    metadata->pcm_usable_blocks   = pcm_usable_blocks;
+    metadata->pcm_interval        = usable_blocks / pcm_usable_blocks;
+    metadata->pcm_victim_block    = -1;
+    metadata->pcm_victim_page_pos = 0;
 #endif
 
     //////////////////////////////////////////////////////////////////////////////

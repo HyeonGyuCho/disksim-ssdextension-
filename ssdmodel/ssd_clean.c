@@ -90,6 +90,8 @@ static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, 
 #ifdef RIA
     //nothing
 #else
+    s->stat.tot_gc_nand_write_count ++;
+    s->stat.tot_nand_write_count --;
     cost += _ssd_write_page_osr(s, metadata, lpn);
 #endif
 
@@ -110,7 +112,7 @@ static double ssd_clean_one_page (int lp_num, int pp_index, int blk, int plane_n
 
     cost += s->params.page_read_latency;
 #ifdef RIA
-    s->stat.tot_nand_read_count++;
+    s->stat.tot_gc_nand_read_count++;
     cost += ssd_move_page(lp_num, blk, plane_num, elem_num, s, clean_req);
 #else
     cost += ssd_move_page(lp_num, blk, plane_num, elem_num, s);
