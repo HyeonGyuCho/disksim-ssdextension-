@@ -11,131 +11,33 @@ fi
 #set -- `getopt g $*`
 #set -- `getopt w $*`
 #for i
-while getopts ":gwt" i
+while getopts ":gywt" i
 do
     case "$i" in
         g)
-            cgdb --args $PREFIX/disksim ssd-iozone.parv ssd-iozone.outv ascii $2 0
-#            cgdb --args $PREFIX/disksim ssd-sr250k.parv ssd-sr250k.outv ascii 0 1 
-#             cgdb --args $PREFIX/disksim ssd-rr250k.parv ssd-rr250k.outv ascii 0 1 
-#            cgdb --args $PREFIX/disksim ssd-postmark.parv ssd-postmark.outv ascii ssd-postmark-aligned2.trace 0 
-#            cgdb --args $PREFIX/disksim ssd-rw5m.parv ssd-rw5m.outv ascii 0 1 
-#            cgdb --args $PREFIX/disksim ssd-sw5m.parv ssd-sw5m.outv ascii 0 1 
-            grep "ssd Response time average:" ssd-iozone.outv | grep -v "#"
+            cgdb --args $PREFIX/disksim_base base.parv base.outv ascii $2 0
+            grep "ssd Response time average:" base.outv | grep -v "#"
+            break;;
+        y)    
+            cgdb --args $PREFIX/disksim_rosa rosa.parv rosa.outv ascii $2 0
+            grep "ssd Response time average:" rosa.outv | grep -v "#"
             break;;
 
         w)
-            echo "---Running tests with the synthetic workload generator---"
-            echo ""
-
-            echo "Sequential read (250K I/Os): average SSD response time should be around 0.132 ms"
-            $PREFIX/disksim ssd-sr250k.parv ssd-sr250k.outv ascii 0 1 
-            grep "ssd Number of pcm read count:" ssd-sr250k.outv | grep -v "#"
-            grep "ssd Number of nand read count:" ssd-sr250k.outv | grep -v "#"
-            grep "ssd Number of pcm write count:" ssd-sr250k.outv | grep -v "#"
-            grep "ssd Number of nand write count:" ssd-sr250k.outv | grep -v "#"
-            grep "ssd Number of ria mig:" ssd-sr250k.outv | grep -v "#"
-            grep "ssd Number of ria gc:" ssd-sr250k.outv | grep -v "#"
-            grep "ssd Number of ria pcm write count:" ssd-sr250k.outv | grep -v "#"
-            grep "ssd Number of ria nand write count:" ssd-sr250k.outv | grep -v "#"
-            grep "ssd Response time average:" ssd-sr250k.outv | grep -v "#"
-            echo ""
-
-            echo "Sequential write (250K I/Os): average SSD response time should be around 0.310 ms"
-            $PREFIX/disksim ssd-sw250k.parv ssd-sw250k.outv ascii 0 1 
-            grep "ssd Number of pcm read count:" ssd-sw250k.outv | grep -v "#"
-            grep "ssd Number of nand read count:" ssd-sw250k.outv | grep -v "#"
-            grep "ssd Number of pcm write count:" ssd-sw250k.outv | grep -v "#"
-            grep "ssd Number of nand write count:" ssd-sw250k.outv | grep -v "#"
-            grep "ssd Number of ria mig:" ssd-sw250k.outv | grep -v "#"
-            grep "ssd Number of ria gc:" ssd-sw250k.outv | grep -v "#"
-            grep "ssd Number of ria pcm write count:" ssd-sw250k.outv | grep -v "#"
-            grep "ssd Number of ria nand write count:" ssd-sw250k.outv | grep -v "#"
-            grep "ssd Response time average:" ssd-sw250k.outv | grep -v "#"
-            echo ""
-
-            echo "Sequential write (5M I/Os): average SSD response time should be around 0.334 ms"
-            $PREFIX/disksim ssd-sw5m.parv ssd-sw5m.outv ascii 0 1 
-            grep "ssd Number of pcm read count:" ssd-sw5m.outv | grep -v "#"
-            grep "ssd Number of nand read count:" ssd-sw5m.outv | grep -v "#"
-            grep "ssd Number of pcm write count:" ssd-sw5m.outv | grep -v "#"
-            grep "ssd Number of nand write count:" ssd-sw5m.outv | grep -v "#"
-            grep "ssd Number of ria mig:" ssd-sw5m.outv | grep -v "#"
-            grep "ssd Number of ria gc:" ssd-sw5m.outv | grep -v "#"
-            grep "ssd Number of ria pcm write count:" ssd-sw5m.outv | grep -v "#"
-            grep "ssd Number of ria nand write count:" ssd-sw5m.outv | grep -v "#"
-            grep "ssd Response time average:" ssd-sw5m.outv | grep -v "#"
-            echo ""
-
-            echo "Random read (250K I/Os): average SSD response time should be around 0.136 ms"
-            $PREFIX/disksim ssd-rr250k.parv ssd-rr250k.outv ascii 0 1 
-            grep "ssd Number of pcm read count:" ssd-rr250k.outv | grep -v "#"
-            grep "ssd Number of nand read count:" ssd-rr250k.outv | grep -v "#"
-            grep "ssd Number of pcm write count:" ssd-rr250k.outv | grep -v "#"
-            grep "ssd Number of nand write count:" ssd-rr250k.outv | grep -v "#"
-            grep "ssd Number of ria mig:" ssd-rr250k.outv | grep -v "#"
-            grep "ssd Number of ria gc:" ssd-rr250k.outv | grep -v "#"
-            grep "ssd Number of ria pcm write count:" ssd-rr250k.outv | grep -v "#"
-            grep "ssd Number of ria nand write count:" ssd-rr250k.outv | grep -v "#"
-            grep "ssd Response time average:" ssd-rr250k.outv | grep -v "#"
-            echo ""
-
-            echo "Random write (250K I/Os): average SSD response time should be around 0.329 ms"
-            $PREFIX/disksim ssd-rw250k.parv ssd-rw250k.outv ascii 0 1 
-            grep "ssd Number of pcm read count:" ssd-rw250k.outv | grep -v "#"
-            grep "ssd Number of nand read count:" ssd-rw250k.outv | grep -v "#"
-            grep "ssd Number of pcm write count:" ssd-rw250k.outv | grep -v "#"
-            grep "ssd Number of nand write count:" ssd-rw250k.outv | grep -v "#"
-            grep "ssd Number of ria mig:" ssd-rw250k.outv | grep -v "#"
-            grep "ssd Number of ria gc:" ssd-rw250k.outv | grep -v "#"
-            grep "ssd Number of ria pcm write count:" ssd-rw250k.outv | grep -v "#"
-            grep "ssd Number of ria nand write count:" ssd-rw250k.outv | grep -v "#"
-            grep "ssd Response time average:" ssd-rw250k.outv | grep -v "#"
-            echo ""
-
-            echo "Random write (5M I/Os): average SSD response time should be around 0.593 ms"
-            $PREFIX/disksim ssd-rw5m.parv ssd-rw5m.outv ascii 0 1 
-            grep "ssd Number of pcm read count:" ssd-rw5m.outv | grep -v "#"
-            grep "ssd Number of nand read count:" ssd-rw5m.outv | grep -v "#"
-            grep "ssd Number of pcm write count:" ssd-rw5m.outv | grep -v "#"
-            grep "ssd Number of nand write count:" ssd-rw5m.outv | grep -v "#"
-            grep "ssd Number of ria mig:" ssd-rw5m.outv | grep -v "#"
-            grep "ssd Number of ria gc:" ssd-rw5m.outv | grep -v "#"
-            grep "ssd Number of ria pcm write count:" ssd-rw5m.outv | grep -v "#"
-            grep "ssd Number of ria nand write count:" ssd-rw5m.outv | grep -v "#"
-            grep "ssd Response time average:" ssd-rw5m.outv | grep -v "#"
-            echo ""
-
-            echo "---Running tests with the real traces---"
-            echo ""
-
-            echo "IOzone: average SSD response time should be around 6.394276 ms"
-            $PREFIX/disksim ssd-iozone.parv ssd-iozone.outv ascii ssd-iozone-aligned2-100K.trace 0 
-            grep "ssd Number of pcm read count:" ssd-iozone.outv | grep -v "#"
-            grep "ssd Number of nand read count:" ssd-iozone.outv | grep -v "#"
-            grep "ssd Number of pcm write count:" ssd-iozone.outv | grep -v "#"
-            grep "ssd Number of nand write count:" ssd-iozone.outv | grep -v "#"
-            grep "ssd Number of ria mig:" ssd-iozone.outv | grep -v "#"
-            grep "ssd Number of ria gc:" ssd-iozone.outv | grep -v "#"
-            grep "ssd Number of ria pcm write count:" ssd-iozone.outv | grep -v "#"
-            grep "ssd Number of ria nand write count:" ssd-iozone.outv | grep -v "#"
-            grep "ssd Response time average:" ssd-iozone.outv | grep -v "#"
-            echo ""
-
-            echo "Postmark: average SSD response time should be around 4.140330 ms"
-            $PREFIX/disksim ssd-postmark.parv ssd-postmark.outv ascii ssd-postmark-aligned2.trace 0 
-            grep "ssd Number of pcm read count:" ssd-postmark.outv | grep -v "#"
-            grep "ssd Number of nand read count:" ssd-postmark.outv | grep -v "#"
-            grep "ssd Number of pcm write count:" ssd-postmark.outv | grep -v "#"
-            grep "ssd Number of nand write count:" ssd-postmark.outv | grep -v "#"
-            grep "ssd Number of ria mig:" ssd-postmark.outv | grep -v "#"
-            grep "ssd Number of ria gc:" ssd-postmark.outv | grep -v "#"
-            grep "ssd Number of ria pcm write count:" ssd-postmark.outv | grep -v "#"
-            grep "ssd Number of ria nand write count:" ssd-postmark.outv | grep -v "#"
-            grep "ssd Response time average:" ssd-postmark.outv | grep -v "#"
-            echo ""
+            $PREFIX/disksim_base base.parv base.outv ascii $2 0  
+            grep "ssd Number of pcm read count:" base.outv | grep -v "#"
+            grep "ssd Number of nand read count:" base.outv | grep -v "#"
+            grep "ssd Number of rd mig:" base.outv | grep -v "#"
+            grep "ssd Number of ria mig:" base.outv | grep -v "#"
+            grep "ssd Response time average:" base.outv | grep -v "#"
+            $PREFIX/disksim_rosa rosa.parv rosa.outv ascii $2 0  
+            grep "ssd Number of pcm read count:" rosa.outv | grep -v "#"
+            grep "ssd Number of nand read count:" rosa.outv | grep -v "#"
+            grep "ssd Number of rd mig:" rosa.outv | grep -v "#"
+            grep "ssd Number of ria mig:" rosa.outv | grep -v "#"
+            grep "ssd Response time average:" rosa.outv | grep -v "#"
             break;;
- 
+
         t)
             echo "---Running tests with the synthetic workload generator---"
             echo ""

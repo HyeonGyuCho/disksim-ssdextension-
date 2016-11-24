@@ -122,14 +122,14 @@ Print stats =  1
 # the queue (disksim_ioqueue)
 ssdmodel_ssd SSD {
      # vp - this is a percentage of total pages in the ssd
-     Reserve pages percentage = 20,
+     Reserve pages percentage = 15,
 
      # vp - min percentage of free blocks needed. if the free 
      # blocks drop below this, cleaning kicks in
-     Minimum free blocks percentage = 17,
+     Minimum free blocks percentage = 5,
 
      # if the free blocks drop below this, ria_gc start
-     Read intensity aware GC = 18,
+     Read intensity aware GC = 7,
 
      # vp - a simple read-modify-erase-write policy = 1 (no longer supported)
      # vp - osr write policy = 2
@@ -139,10 +139,10 @@ ssdmodel_ssd SSD {
      Cleaning policy = 2,
 
      # vp - number of planes in each flash package (element)
-     Planes per package = 16,
+     Planes per package = 2,
 
      # vp - number of flash blocks in each plane
-     Blocks per plane = 4096,
+     Blocks per plane = 2048,
 
      # vp - how the blocks within an element are mapped on a plane
      # simple concatenation = 1, plane-pair stripping = 2 (not tested),
@@ -179,14 +179,14 @@ ssdmodel_ssd SSD {
 #    from disksim_bus above.
      Bulk sector transfer time =  0,
 
-     Flash chip elements = 4,
+     Flash chip elements = 8,
 
      Page size = 8,
 
      Pages per block = 192,
 
      # vp - changing the no of blocks from 16184 to 16384
-     Blocks per element = 65536,
+     Blocks per element = 4096,
 
      Element stride pages = 1,
 
@@ -212,21 +212,26 @@ ssdmodel_ssd SSD {
 
      # vp changing the Chip xfer latency from per sector to per byte
      Chip xfer latency = 0.000025,
+#     Chip xfer latency = 0.0000,
 
 #     Page read latency = 0.025,
 #     Page write latency = 0.200,
 #     Block erase latency = 1.5,
 
-     Page read latency = 0.100,
-     Page write latency = 0.600,
-     Block erase latency = 5,
+     LSB read latency = 0.058,
+     CSB read latency = 0.075,
+     MSB read latency = 0.106,
+     LSB write latency = 0.539,
+     CSB write latency = 2.122,
+     MSB write latency = 4.814,
+     Block erase latency = 2.56,
 
-     Pcm read latency = 0.010,
-     Pcm write latency = 0.100,
+     Pcm read latency = 0.00704,
+     Pcm write latency = 0.0512,
      Pcm block percentage = 20,
 
      Read disturb threshold = 38000,
-     Logical clean interval = 20,
+     Logical clean interval = 9999999999,
      Ria gc trigger         = 10
 }  # end of SSD spec
 
@@ -236,6 +241,9 @@ instantiate [ statfoo ]         as  Stats
 
 # vp - adding another ssd 
 instantiate [ ssd0x0 ] as  SSD
+instantiate [ ssd0x1 ] as  SSD
+instantiate [ ssd0x2 ] as  SSD
+instantiate [ ssd0x3 ] as  SSD
 
 instantiate [ bustop ]    as  BUSTOP
 instantiate [ busHBA0 ]    as  BUSHBA
@@ -251,7 +259,11 @@ topology disksim_iodriver driver0 [
           disksim_ctlr ctlrHBA0 [
                disksim_bus busHBA0 [
                     ############## Flash-device Raid Controller ###############
-                    ssdmodel_ssd ssd0x0 []
+                    ssdmodel_ssd ssd0x0 [],
+                    ssdmodel_ssd ssd0x1 [],
+                    ssdmodel_ssd ssd0x2 [],
+                    ssdmodel_ssd ssd0x3 []
+#                    ssdmodel_ssd ssd0x0 []
 
                ]     # end of bus0
           ]        # end of HBA0
@@ -284,6 +296,68 @@ disksim_logorg org0 {
    Time stamp stop time =  10000000000.000000,
    Time stamp file name =  stamps
 } # end of logorg org0 spec
+disksim_logorg org1 {
+   Addressing mode = Array,
+   Distribution scheme = Striped,
+   Redundancy scheme = Noredun,
+
+   # vp - added more ssd elements
+   devices = [ ssd0x1 ],
+
+   Stripe unit  =  128,
+   Synch writes for safety =  0,
+   Number of copies =  2,
+   Copy choice on read =  6,
+   RMW vs. reconstruct =  0.5,
+   Parity stripe unit =  128,
+   Parity rotation type =  1,
+   Time stamp interval =  0.000000,
+   Time stamp start time =  60000.000000,
+   Time stamp stop time =  10000000000.000000,
+   Time stamp file name =  stamps
+} # end of logorg org1 spec
+disksim_logorg org2 {
+   Addressing mode = Array,
+   Distribution scheme = Striped,
+   Redundancy scheme = Noredun,
+
+   # vp - added more ssd elements
+   devices = [ ssd0x2 ],
+
+   Stripe unit  =  128,
+   Synch writes for safety =  0,
+   Number of copies =  2,
+   Copy choice on read =  6,
+   RMW vs. reconstruct =  0.5,
+   Parity stripe unit =  128,
+   Parity rotation type =  1,
+   Time stamp interval =  0.000000,
+   Time stamp start time =  60000.000000,
+   Time stamp stop time =  10000000000.000000,
+   Time stamp file name =  stamps
+} # end of logorg org2 spec
+disksim_logorg org3 {
+   Addressing mode = Array,
+   Distribution scheme = Striped,
+   Redundancy scheme = Noredun,
+
+   # vp - added more ssd elements
+   devices = [ ssd0x3 ],
+
+   Stripe unit  =  128,
+   Synch writes for safety =  0,
+   Number of copies =  2,
+   Copy choice on read =  6,
+   RMW vs. reconstruct =  0.5,
+   Parity stripe unit =  128,
+   Parity rotation type =  1,
+   Time stamp interval =  0.000000,
+   Time stamp start time =  60000.000000,
+   Time stamp stop time =  10000000000.000000,
+   Time stamp file name =  stamps
+} # end of logorg org3 spec
+
+
 
 disksim_pf Proc {
    Number of processors =  1,
@@ -291,24 +365,24 @@ disksim_pf Proc {
 } # end of process flow spec
 
 disksim_synthio Synthio {
-   Number of I/O requests to generate =  10000,
-   Maximum time of trace generated  =  1000.0,
+   Number of I/O requests to generate =  5000000,
+   Maximum time of trace generated  =  5000000.0,
    System call/return with each request =  0,
    Think time from call to request =  0.0,
    Think time from request to return =  0.0,
 Generators = [
 disksim_synthgen { # generator 0
-   Storage capacity per device  =  6156008,
-   devices = [ org0 .. org13 ],
+   Storage capacity per device  =  7018904,
+   devices = [ org0 ],
    Blocking factor =  8,
    Probability of sequential access =  0.0,
    Probability of local access =  0.0,
-   Probability of read access =  0.66,
+   Probability of read access =  0.0,
    Probability of time-critical request =  0.0,
    Probability of time-limited request =  0.0,
    Time-limited think times  = [ normal, 30.0, 100.0  ],
-   General inter-arrival times  = [ exponential, 0.0, 5.0  ],
-   Sequential inter-arrival times  = [ normal, 0.0, 0.0  ],
+   General inter-arrival times  = [ uniform, 0.0, 1.0  ],
+   Sequential inter-arrival times  = [ uniform, 0.0, 1.0  ],
    Local inter-arrival times  = [ exponential, 0.0, 0.0  ],
    Local distances  = [ normal, 0.0, 40000.0  ],
    Sizes  = [ exponential, 0.0, 8.0  ]

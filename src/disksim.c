@@ -1098,7 +1098,7 @@ void disksim_cleanup(void)
   }
 }
 
-void disksim_printstats(void) {
+void disksim_printstats() {
    fprintf(outputfile, "Simulation complete\n");
    fflush(outputfile);
 

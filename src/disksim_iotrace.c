@@ -586,7 +586,7 @@ static ioreq_event * iotrace_ascii_get_ioreq_event (FILE *tracefile, ioreq_event
 {
    char line[201];
 
-   static int iteration = 199; 
+   static int iteration = 0; 
    static double addtime = 0;
 
    if (fgets(line, 200, tracefile) == NULL) {
@@ -598,6 +598,7 @@ static ioreq_event * iotrace_ascii_get_ioreq_event (FILE *tracefile, ioreq_event
            iteration--;
            fseek(tracefile, 0, SEEK_SET);
            addtime = new->time;
+           fprintf(stderr, "Remain: %d\n", iteration);
            fgets(line, 200, tracefile);
        }
    }
@@ -608,7 +609,7 @@ static ioreq_event * iotrace_ascii_get_ioreq_event (FILE *tracefile, ioreq_event
    }
 
    if (addtime != 0) {
-       new->time += 1.1*addtime;
+       new->time += 1.5*addtime;
    }
 
 /*original code*/ 

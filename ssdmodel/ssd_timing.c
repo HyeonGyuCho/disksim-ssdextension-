@@ -72,9 +72,9 @@ void pcm_victim_select(ssd_t *s, ssd_element_metadata *metadata) {
 double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num, int blk, int MOVE) {
     int i;
     double cost = 0;
-    unsigned int read_count = 0;
-    unsigned int max_read_count;
-    unsigned int min_read_count = 0xffffffff;
+    long long int read_count = 0;
+    long long int max_read_count;
+    long long int min_read_count = 0xffffffff;
     int page_max_read_count = 0;
     int interval_pcm   = metadata->pcm_interval;
     int index_blk;
@@ -104,8 +104,9 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
         metadata->pcm_victim_block = pcm_blk;
         metadata->pcm_avg_read_count = read_count / metadata->pcm_usable_blocks;*/
     } else {
-        for(i = 0; i < metadata->pcm_usable_blocks; i++)
+        for(i = 0; i < metadata->pcm_usable_blocks; i++) {
             read_count += metadata->block_usage[i * interval_pcm].log_read_count / s->params.pages_per_block;
+        }
         //metadata->pcm_victim_block = pcm_blk;
         metadata->pcm_avg_read_count = read_count / metadata->pcm_usable_blocks;
         pcm_blk = metadata->pcm_victim_block;
@@ -134,7 +135,7 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
         // Search NAND block which has max read count
         for(i = 0; i < metadata->hot_size; i++) {
             index_blk = metadata->hot_table[i];
-            if((metadata->block_usage[index_blk].log_read_count / metadata->block_usage[index_blk].num_valid) > max_read_count) {
+            if((metadata->block_usage[index_blk].log_read_count / metadata->block_usage[index_blk].num_valid) >= max_read_count) {
                 max_read_count = metadata->block_usage[index_blk].log_read_count / metadata->block_usage[index_blk].num_valid;
                 nand_blk = index_blk;
             }
@@ -162,7 +163,10 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
 #endif
         s->stat.tot_ria_mig ++; 
     } else {
-        nand_blk = blk;
+        if (blk != -1)
+            nand_blk = blk;
+        else
+            return cost;
         s->stat.tot_ria_gc ++;
     }
 
@@ -245,7 +249,12 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
             metadata->plane_meta[active_plane].valid_pages ++;
 
             cost += s->params.pcm_read_latency;
-            cost += s->params.page_write_latency;
+            if (pagepos_in_block % 3 == 0)
+                cost += s->params.lsb_write_latency;
+            else if (pagepos_in_block % 3 == 1)
+                cost += s->params.csb_write_latency;
+            else
+                cost += s->params.msb_write_latency;
             //s->stat.tot_pcm_read_count ++;
             //s->stat.tot_nand_write_count ++;
 
@@ -271,8 +280,14 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
 #endif
 
 #endif
-            if (MOVE != RIA_GC) { 
-                cost += s->params.page_read_latency; 
+            if (MOVE != RIA_GC) {
+                if (i % 3 == 0) 
+                    cost += s->params.lsb_read_latency; 
+                else if (i % 3 == 1)
+                    cost += s->params.csb_read_latency; 
+                else
+                    cost += s->params.msb_read_latency; 
+
                 s->stat.tot_ria_mig_nand_read_count ++;
             } else {
                 s->stat.tot_ria_gc_nand_read_count ++;
@@ -307,7 +322,7 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
                 cost += ssd_data_transfer_cost(s, SSD_SECTORS_PER_SUMMARY_PAGE);
 
                 //cost of writeing the summary page data
-                cost += s->params.page_write_latency;
+                cost += s->params.lsb_write_latency;
 
                 // seal the last summary page. since we use the summary page
                 // as a metadata, we don't count it as a valid data page.
@@ -322,7 +337,6 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
 #endif 
         }
     } while(++i < s->params.pages_per_block - 1);
-    return 0;
     return cost;
 }
 
@@ -375,11 +389,17 @@ double read_disturb_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num,
             s->stat.tot_rd_nand_read_count ++;
             s->stat.tot_rd_nand_write_count ++;
             s->stat.tot_nand_write_count --;
-            cost += s->params.page_read_latency; 
+
+            if (i % 3 == 0) 
+                cost += s->params.lsb_read_latency; 
+            else if (i % 3 == 1)
+                cost += s->params.csb_read_latency; 
+            else
+                cost += s->params.msb_read_latency; 
+            
             cost += _ssd_write_page_osr(s, metadata, nand_lpn);
         }
     } while(++i < s->params.pages_per_block - 1);
-    return 0;
     return cost;
 }
 #endif
@@ -434,17 +454,21 @@ static double ssd_write_policy_simple(int blkno, int count, int elem_num, ssd_t 
 
     if (last_pn >= 0 && pn >= last_pn && (pn/ppb == last_pn/ppb)) {
         // the cost of one page write
+#ifndef PN_SSD
         cost = tt->params->page_write_latency;
+#endif
 
         // plus the cost of copying the intermediate pages
+#ifndef PN_SSD
         cost += (pn-last_pn) * (tt->params->page_read_latency + tt->params->page_write_latency);
-
+#endif
         // stat - pages moved other than the page we wrote
         pages_moved = pn - last_pn;
     } else {
         // the cost of one page write
+#ifndef PN_SSD
         cost = tt->params->page_write_latency;
-
+#endif
         // plus the cost of an erase
         cost += tt->params->block_erase_latency;
 
@@ -452,16 +476,18 @@ static double ssd_write_policy_simple(int blkno, int count, int elem_num, ssd_t 
         s->elements[elem_num].stat.num_clean ++;
 
         // plus the cost of copying the blocks prior to this pn
+#ifndef PN_SSD
         cost += blockpos * (tt->params->page_read_latency + tt->params->page_write_latency);
-
+#endif
         // stat
         pages_moved = blockpos;
 
         if (last_pn >= 0) {
             // plus the cost of copying remaining pages in last written block
+#ifndef PN_SSD
             cost += (ppb-lastpos) *
                 (tt->params->page_read_latency + tt->params->page_write_latency);
-
+#endif
             // stat
             pages_moved += ppb - lastpos;
         }
@@ -484,10 +510,14 @@ static double ssd_write_policy_simple(int blkno, int count, int elem_num, ssd_t 
 
 double ssd_read_policy_simple(int count, ssd_t *s)
 {
+#ifndef PN_SSD
     double cost = s->params.page_read_latency;
     cost += ssd_data_transfer_cost(s, count);
 
     return cost;
+#else
+    return 0;
+#endif
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -745,7 +775,17 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
 #ifdef PN_SSD
     s->stat.tot_nand_write_count ++;
 #endif
+
+#ifdef PN_SSD
+    if (pagepos_in_block % 3 == 0)
+        cost = s->params.lsb_write_latency;
+    else if (pagepos_in_block % 3 == 1)
+        cost = s->params.csb_write_latency;
+    else
+        cost = s->params.msb_write_latency;
+#else
     cost = s->params.page_write_latency;
+#endif
     //printf("lpn %d active pg %d\n", lpn, active_page);
 
     // go to the next free page
@@ -759,7 +799,11 @@ double _ssd_write_page_osr(ssd_t *s, ssd_element_metadata *metadata, int lpn)
         cost += ssd_data_transfer_cost(s, SSD_SECTORS_PER_SUMMARY_PAGE);
 
         // cost of writing the summary page data
+#ifdef PN_SSD
+        cost += s->params.lsb_write_latency;
+#else
         cost += s->params.page_write_latency;
+#endif
 
         // seal the last summary page. since we use the summary page
         // as a metadata, we don't count it as a valid data page.
@@ -799,7 +843,6 @@ void _ssd_alloc_active_block(int plane_num, int elem_num, ssd_t *s)
     // check if we found the free bit in the plane we wanted to
     if (plane_num != -1) {
         if (ssd_bitpos_to_plane(bitpos, s) != plane_num) {
-
             //printf("Error: We wanted a free block in plane %d but found another in %d\n",
             //  plane_num, ssd_bitpos_to_plane(bitpos, s));
             //printf("So, starting the search again for plane %d\n", plane_num);
@@ -1097,23 +1140,33 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                     if(hot_table_full(metadata)) {
 #ifndef RIA
                         parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
+                        metadata->block_usage[read_block].erase_cnt++;
 #else
                         double hot_migration_cost = hot_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
                         if(hot_migration_cost != 0)
                             parunit_op_cost[i] += hot_migration_cost;
                         else
                             parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
+
+                        metadata->block_usage[read_block].erase_cnt++;
 #endif
                         hot_table_clean(s, metadata);
-                    } else { 
-                        if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
-                            parunit_op_cost[i] += s->params.page_read_latency;
-                            s->stat.tot_nand_read_count ++;
-                        } else {
-                            parunit_op_cost[i] += s->params.pcm_read_latency;
-                            s->stat.tot_pcm_read_count ++;
-                        }
                     }
+
+                    if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
+                        if (ppage % 3 == 0)
+                            parunit_op_cost[i] += s->params.lsb_read_latency;
+                        else if (ppage % 3 == 1)
+                            parunit_op_cost[i] += s->params.csb_read_latency;
+                        else
+                            parunit_op_cost[i] += s->params.msb_read_latency;
+
+                        s->stat.tot_nand_read_count ++;
+                    } else {
+                        parunit_op_cost[i] += s->params.pcm_read_latency;
+                        s->stat.tot_pcm_read_count ++;
+                    }
+
 #else
                     parunit_op_cost[i] = s->params.page_read_latency;
 #endif

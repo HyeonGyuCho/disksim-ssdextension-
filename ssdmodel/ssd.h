@@ -25,9 +25,9 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_BITS_ELEMS_PER_GANG     8
 
 #define PN_SSD                      
-#define RIA
+//#define RIA
 
-#define RIA2
+//#define RIA2
 //#define READ_DISTURB
 
 #ifdef PN_SSD
@@ -46,31 +46,30 @@ typedef struct {
    double  waitingforbus;
    int     numbuswaits;
 #ifdef PN_SSD
-   unsigned int     tot_pcm_read_count;
-   unsigned int     tot_nand_read_count;
-   unsigned int     tot_pcm_write_count;
-   unsigned int     tot_nand_write_count;
+   long long int     tot_pcm_read_count;
+   long long int     tot_nand_read_count;
+   long long int     tot_pcm_write_count;
+   long long int     tot_nand_write_count;
    
-   unsigned int     tot_rd_mig;
-   unsigned int     tot_rd_nand_read_count;
-   unsigned int     tot_rd_nand_write_count;
+   long long int     tot_rd_mig;
+   long long int     tot_rd_nand_read_count;
+   long long int     tot_rd_nand_write_count;
    
+   long long int     tot_ria_mig;
+   long long int     tot_ria_mig_pcm_read_count;
+   long long int     tot_ria_mig_nand_read_count;
+   long long int     tot_ria_mig_pcm_write_count;
+   long long int     tot_ria_mig_nand_write_count;
    
-   unsigned int     tot_ria_mig;
-   unsigned int     tot_ria_mig_pcm_read_count;
-   unsigned int     tot_ria_mig_nand_read_count;
-   unsigned int     tot_ria_mig_pcm_write_count;
-   unsigned int     tot_ria_mig_nand_write_count;
+   long long int     tot_normal_gc;
+   long long int     tot_gc_nand_read_count;
+   long long int     tot_gc_nand_write_count;
    
-   unsigned int     tot_normal_gc;
-   unsigned int     tot_gc_nand_read_count;
-   unsigned int     tot_gc_nand_write_count;
-   
-   unsigned int     tot_ria_gc;
-   unsigned int     tot_ria_gc_pcm_read_count;
-   unsigned int     tot_ria_gc_nand_read_count;
-   unsigned int     tot_ria_gc_pcm_write_count;
-   unsigned int     tot_ria_gc_nand_write_count;
+   long long int     tot_ria_gc;
+   long long int     tot_ria_gc_pcm_read_count;
+   long long int     tot_ria_gc_nand_read_count;
+   long long int     tot_ria_gc_pcm_write_count;
+   long long int     tot_ria_gc_nand_write_count;
 #endif
 } ssd_stat_t;
 
@@ -111,8 +110,9 @@ typedef struct _block_metadata {
 
 #ifdef PN_SSD
     int         nBlocktype;             // PCM: 1, NAND: 2
-    int         num_read_count;         // the number of block read count
-    int         log_read_count;         // logical block read count which is refreshed at the specific period
+    long long int         num_read_count;         // the number of block read count
+    long long int         log_read_count;         // logical block read count which is refreshed at the specific period
+    long long int        erase_cnt;              // block erase count
     int         *page_read_count;       // page read count table
 #endif
 
@@ -354,8 +354,12 @@ typedef struct _ssd_timing_params {
     //vp - changing the chip_xfer_latency to per byte transfer cost
     //instead of per sector transfer cost to make more accurate estimate
     double chip_xfer_latency;           // time to get a byte to/from the chip register
-    double page_read_latency;           // time to read a page into chip register
-    double page_write_latency;          // time to write a page from chip register
+    double lsb_read_latency;            // time to read a page into chip register
+    double csb_read_latency;            // time to read a page into chip register
+    double msb_read_latency;            // time to read a page into chip register
+    double lsb_write_latency;           // time to write a page from chip register
+    double csb_write_latency;           // time to write a page from chip register
+    double msb_write_latency;           // time to write a page from chip register
     double block_erase_latency;         // time to erase a block
 
     double pcm_read_latency;            // time to read a page into pcm chip register

@@ -1155,34 +1155,53 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    double waitingforbus = 0.0;
 
 #ifdef PN_SSD
-   int pcm_read_count = 0;
-   int nand_read_count = 0;
-   int pcm_write_count = 0;
-   int nand_write_count = 0;
-   
-   int rd_mig = 0;
-   int rd_nand_read_count = 0;
-   int rd_nand_write_count = 0;
-   
-   int ria_mig = 0;
-   int ria_mig_pcm_read_count = 0;
-   int ria_mig_nand_read_count = 0;
-   int ria_mig_pcm_write_count = 0;
-   int ria_mig_nand_write_count = 0;
-   
-   int normal_gc = 0; 
-   int gc_nand_read_count = 0;
-   int gc_nand_write_count = 0;
+   long long int pcm_read_count = 0;
+   long long int nand_read_count = 0;
+   long long int pcm_write_count = 0;
+   long long int nand_write_count = 0;
+    
+   long long int rd_mig = 0;
+   long long int rd_nand_read_count = 0;
+   long long int rd_nand_write_count = 0;
+    
+   long long int ria_mig = 0;
+   long long int ria_mig_pcm_read_count = 0;
+   long long int ria_mig_nand_read_count = 0;
+   long long int ria_mig_pcm_write_count = 0;
+   long long int ria_mig_nand_write_count = 0;
+    
+   long long int normal_gc = 0; 
+   long long int gc_nand_read_count = 0;
+   long long int gc_nand_write_count = 0;
 
-   int ria_gc = 0;
-   int ria_gc_pcm_read_count = 0;
-   int ria_gc_nand_read_count = 0;
-   int ria_gc_pcm_write_count = 0;
-   int ria_gc_nand_write_count = 0;
+   long long int ria_gc = 0;
+   long long int ria_gc_pcm_read_count = 0;
+   long long int ria_gc_nand_read_count = 0;
+   long long int ria_gc_pcm_write_count = 0;
+   long long int ria_gc_nand_write_count = 0;
 #endif
+
+   FILE *blockout;
+   blockout = fopen("block_erase","a");
+   int elem_num;
+   int blk_id;
+   long long int log_read_count = 0;
+   long long int erase_cnt =0;
+   unsigned int tot_blocks;
 
    for (i=0; i<setsize; i++) {
       ssd_t *currdisk = getssd (set[i]);
+     
+      tot_blocks = currdisk->params.blocks_per_element;
+      for(elem_num = 0; elem_num < currdisk->params.nelements; elem_num++) {
+          ssd_element_metadata *metadata = &(currdisk->elements[elem_num].metadata);
+          for(blk_id = 0; blk_id < tot_blocks; blk_id++) {
+              log_read_count = metadata->block_usage[blk_id].log_read_count;
+              erase_cnt = metadata->block_usage[blk_id].erase_cnt;
+              fprintf(blockout, "Blk_id: \t%d \tErase_cnt: \t%lld \tRead_cnt: \t%lld\n", blk_id, erase_cnt, log_read_count);
+          }
+      }
+
       numbuswaits += currdisk->stat.numbuswaits;
       waitingforbus += currdisk->stat.waitingforbus;
 #ifdef PN_SSD
@@ -1213,6 +1232,17 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
 #endif
    }
 
+//   unsigned int tot_blocks = currdisk->params.blocks_per_element;
+//   for(elem_num = 0; elem_num < currdisk->params.nelements; elem_num++) {
+//       ssd_element_metadata *metadata = &(currdisk->elements[elem_num].metadata);
+//       for(blk_id = 0; blk_id < tot_blocks; blk_id++) {
+//           int log_read_count = metadata->block_usage[blk_id].log_read_count;
+//           int erase_cnt = metadata->block_usage[blk_id].erase_cnt;
+//           fprintf(blockout, "Blk_id: \t%d \tErase_cnt: \t%d \tRead_cnt: \t%d\n", blk_id, erase_cnt, log_read_count);
+//       }
+//   }
+   fclose(blockout);
+
    fprintf(outputfile, "%sTotal bus wait time: %f\n", prefix, waitingforbus);
    fprintf(outputfile, "%sNumber of bus waits: %d\n", prefix, numbuswaits);
 
@@ -1241,8 +1271,8 @@ static void ssd_other_printstats (int *set, int setsize, char *prefix)
    fprintf(outputfile, "%sNumber of ria gc nand read count: \t%d\n", prefix, ria_gc_nand_read_count);
    fprintf(outputfile, "%sNumber of ria gc pcm write count: \t%d\n", prefix, ria_gc_pcm_write_count);
    fprintf(outputfile, "%sNumber of ria gc nand write count: \t%d\n", prefix, ria_gc_nand_write_count);
-#endif
 
+#endif
 }
 
 void ssd_print_block_lifetime_distribution(int elem_num, ssd_t *s, int ssdno, double avg_lifetime, char *sourcestr)
@@ -1465,7 +1495,7 @@ void ssd_printsetstats (int *set, int setsize, char *sourcestr)
 }
 
 
-void ssd_printstats (void)
+void ssd_printstats ()
 {
    struct ioq * queueset[MAXDEVICES*SSD_MAX_ELEMENTS];
    int set[MAXDEVICES];

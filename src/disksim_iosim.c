@@ -618,10 +618,18 @@ event * io_get_next_external_event (FILE *iotracefile)
       }
       temp->time = (temp->time * ioscale) + tracebasetime;
       if ((temp->time < simtime) && (!disksim->closedios)) {
+#ifndef PN_SSD
          fprintf(stderr, "Trace event appears out of time order in trace - simtime %f, time %f\n", simtime, temp->time);
 	 fprintf(stderr, "ioscale %f, tracebasetime %f\n", ioscale, tracebasetime);
 	 fprintf(stderr, "devno %d, blkno %d, bcount %d, flags %d\n", temp->devno, temp->blkno, temp->bcount, temp->flags);
          exit(1);
+#else
+//     fprintf(stderr, "Trace event appears out of time order in trace - simtime %f, time %f\n", simtime, temp->time);
+//	 fprintf(stderr, "ioscale %f, tracebasetime %f\n", ioscale, tracebasetime);
+//	 fprintf(stderr, "devno %d, blkno %d, bcount %d, flags %d\n", temp->devno, temp->blkno, temp->bcount, temp->flags);
+         //for iteration
+         temp->time = simtime + 1;
+#endif
       }
       if (tracemappings) {
          io_map_trace_request(temp);

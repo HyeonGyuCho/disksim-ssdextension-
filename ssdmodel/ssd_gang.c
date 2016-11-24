@@ -217,7 +217,11 @@ double ssd_gang_read_sync(int gang_num, int blkno, int count, ssd_t *s)
 
         // first request means include the read time too
         //if (blk == blkno) {
-            acctime = s->params.page_read_latency;
+#ifdef PN_SSD
+        acctime = s->params.lsb_read_latency;
+#else
+        acctime = s->params.page_read_latency;
+#endif
         //}
 
         // for other requests, since the read is overlapped
@@ -332,8 +336,11 @@ static void ssd_activate_gang_sync(int gang_num, ssd_t *s)
                     count -= s->params.page_size;
                     blk += s->params.page_size;
                 }
-
+#ifdef PN_SSD
+                read_time += s->params.lsb_read_latency;
+#else
                 read_time += s->params.page_read_latency;
+#endif
             }
 
             // we need to issue a new write request, so allocate
@@ -371,23 +378,25 @@ static void ssd_activate_gang_sync(int gang_num, ssd_t *s)
                 req_time += xfertime;
 
                 // see if a summary page was written
+#ifndef PN_SSD
                 if (elem_req[0]->acctime > (xfertime + s->params.page_write_latency)) {
                     wrote_summary = 1;
                 }
-
+#endif
                 // go to next block
                 blk += s->params.page_size;
                 count -= s->params.page_size;
             }
 
             // if a summary page was written, include its time too
+#ifndef PN_SSD
             if (wrote_summary) {
                 req_time += req_time; // add the time for transferring the summary pages too
                 req_time += 2 * s->params.page_write_latency;
             } else {
                 req_time += s->params.page_write_latency;
             }
-
+#endif
             // add an event for request completion
             req->time = simtime + req_time;
             req->type = DEVICE_ACCESS_COMPLETE;

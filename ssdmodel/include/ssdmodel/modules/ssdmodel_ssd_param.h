@@ -27,8 +27,12 @@ typedef enum {
    SSDMODEL_SSD_BLOCKS_PER_ELEMENT,
    SSDMODEL_SSD_ELEMENT_STRIDE_PAGES,
    SSDMODEL_SSD_CHIP_XFER_LATENCY,
-   SSDMODEL_SSD_PAGE_READ_LATENCY,
-   SSDMODEL_SSD_PAGE_WRITE_LATENCY,
+   SSDMODEL_SSD_LSB_READ_LATENCY,
+   SSDMODEL_SSD_CSB_READ_LATENCY,
+   SSDMODEL_SSD_MSB_READ_LATENCY,
+   SSDMODEL_SSD_LSB_WRITE_LATENCY,
+   SSDMODEL_SSD_CSB_WRITE_LATENCY,
+   SSDMODEL_SSD_MSB_WRITE_LATENCY,
    SSDMODEL_SSD_BLOCK_ERASE_LATENCY,
    SSDMODEL_SSD_READ_INTENSITY_AWARE_GC,
    SSDMODEL_SSD_PCM_READ_LATENCY,
@@ -73,8 +77,12 @@ static struct lp_varspec ssdmodel_ssd_params [] = {
    {"Blocks per element", I, 1 },
    {"Element stride pages", I, 1 },
    {"Chip xfer latency", D, 1 },
-   {"Page read latency", D, 1 },
-   {"Page write latency", D, 1 },
+   {"LSB read latency", D, 1 },
+   {"CSB read latency", D, 1 },
+   {"MSB read latency", D, 1 },
+   {"LSB write latency", D, 1 },
+   {"CSB write latency", D, 1 },
+   {"MSB write latency", D, 1 },
    {"Block erase latency", D, 1 },
    {"Read intensity aware GC", I, 1 },
    {"Pcm read latency", D, 1 },
@@ -98,7 +106,7 @@ static struct lp_varspec ssdmodel_ssd_params [] = {
    {"Allocation pool logic", I, 1 },
    {0,0,0}
 };
-#define SSDMODEL_SSD_MAX 38
+#define SSDMODEL_SSD_MAX 42
 static struct lp_mod ssdmodel_ssd_mod = { "ssdmodel_ssd", ssdmodel_ssd_params, SSDMODEL_SSD_MAX, (lp_modloader_t)ssdmodel_ssd_loadparams,  0, 0, SSDMODEL_SSD_loaders, SSDMODEL_SSD_deps };
 
 

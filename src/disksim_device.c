@@ -233,7 +233,7 @@ void device_resetstats (void)
 }
 
 
-void device_printstats (void)
+void device_printstats ()
 {
    /* call for each type of device */
    disk_printstats ();

@@ -99,16 +99,44 @@ INIT result->params.chip_xfer_latency = d;
 This specifies the time taken to transfer a byte in a chip. The time
 is specified in ms.
 
-PARAM Page read latency		D	1
+PARAM LSB read latency		D	1
 TEST (d >= 0)
-INIT result->params.page_read_latency = d;
+INIT result->params.lsb_read_latency = d;
 
 This specifies the time taken to read a flash page from the package
 into its register (in ms).
 
-PARAM Page write latency	D	1
+PARAM CSB read latency		D	1
 TEST (d >= 0)
-INIT result->params.page_write_latency = d;
+INIT result->params.csb_read_latency = d;
+
+This specifies the time taken to read a flash page from the package
+into its register (in ms).
+
+PARAM MSB read latency		D	1
+TEST (d >= 0)
+INIT result->params.msb_read_latency = d;
+
+This specifies the time taken to read a flash page from the package
+into its register (in ms).
+
+PARAM LSB write latency	D	1
+TEST (d >= 0)
+INIT result->params.lsb_write_latency = d;
+
+This specifies the time taken to write a flash page from the package
+register into the flash memory (in ms).
+
+PARAM CSB write latency	D	1
+TEST (d >= 0)
+INIT result->params.csb_write_latency = d;
+
+This specifies the time taken to write a flash page from the package
+register into the flash memory (in ms).
+
+PARAM MSB write latency	D	1
+TEST (d >= 0)
+INIT result->params.msb_write_latency = d;
 
 This specifies the time taken to write a flash page from the package
 register into the flash memory (in ms).
