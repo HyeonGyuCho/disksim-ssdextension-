@@ -25,7 +25,7 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_BITS_ELEMS_PER_GANG     8
 
 #define PN_SSD                      
-//#define RIA
+#define RIA
 
 //#define RIA2
 //#define READ_DISTURB
@@ -176,8 +176,8 @@ typedef struct _ssd_element_metadata {
     int *lba_table;                 // a table mapping the lba to the physical pages
                                     // on the chip.
 #ifdef PN_SSD
-    int *hot_table;                 // a table including the hottest block info
-    int hot_size;                   // hot region size
+    int *rosa_table;                // a table including the hottest block info
+    int rosa_table_size;            // hot region size
     unsigned int pcm_avg_read_count;// PRAM average read count 
     int pcm_victim_block;           // PRAM victim block
     int pcm_victim_page_pos;        // PRAM victim page pos

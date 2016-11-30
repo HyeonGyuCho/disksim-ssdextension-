@@ -9,12 +9,12 @@
 #include "modules/ssdmodel_ssd_param.h"
 
 #ifdef PN_SSD
-void hot_table_clean(ssd_t *s, ssd_element_metadata *metadata) {
+void rosa_table_clean(ssd_t *s, ssd_element_metadata *metadata) {
     int i;
     static int logical_clean = 0;
 
-    for(i = 0; i < metadata->hot_size; i++) 
-        metadata->hot_table[i] = -1;
+    for(i = 0; i < metadata->rosa_table_size; i++) 
+        metadata->rosa_table[i] = -1;
     if (logical_clean++ > s->params.logical_clean_interval) {
         for(i = 0; i < s->params.blocks_per_element; i++)
             metadata->block_usage[i].log_read_count = 0;
@@ -22,26 +22,38 @@ void hot_table_clean(ssd_t *s, ssd_element_metadata *metadata) {
     }
 }
 
-void hot_table_add(ssd_t *s, int read_block, ssd_element_metadata *metadata) {
+void rosa_table_add(ssd_t *s, int read_block, ssd_element_metadata *metadata) {
     int i;
 
-    for(i = 0; i < metadata->hot_size; i++) {
-        if (metadata->hot_table[i] != -1) {
-            if(metadata->hot_table[i] == read_block)
+    for(i = 0; i < metadata->rosa_table_size; i++) {
+        int blk_index = metadata->rosa_table[i];
+        long long int blk_ref;
+        if(blk_index != -1)
+            blk_ref = metadata->block_usage[blk_index].log_read_count / metadata->block_usage[blk_index].num_valid;
+        long int read_ref = metadata->block_usage[read_block].log_read_count / metadata->block_usage[read_block].num_valid;
+        
+        if (metadata->rosa_table[i] != -1) {
+            if(blk_index == read_block)
                 return;
-        }
-        else if (metadata->block_usage[read_block].num_read_count >= s->params.read_threshold) {
-            metadata->hot_table[i] = read_block;
-            return;
+
+            if (blk_ref < read_ref) {
+                metadata->rosa_table[i] = read_block;
+                return;
+            }
+        } else if(read_ref > metadata->pcm_avg_read_count) { 
+            if (metadata->block_usage[read_block].num_valid <= (s->params.pages_per_block / s->params.ria_gc_trigger)) {
+                metadata->rosa_table[i] = read_block;
+                return;
+            }
         }
     }
 }
 
-int hot_table_full(ssd_element_metadata *metadata) {
+int rosa_table_full(ssd_element_metadata *metadata) {
     int i;
 
-    for(i = 0; i < metadata->hot_size; i++) {
-        if(metadata->hot_table[i] == -1)
+    for(i = 0; i < metadata->rosa_table_size; i++) {
+        if(metadata->rosa_table[i] == -1)
             return 0;
     }
     return 1;
@@ -69,7 +81,7 @@ void pcm_victim_select(ssd_t *s, ssd_element_metadata *metadata) {
     metadata->pcm_avg_read_count  = read_count / metadata->pcm_usable_blocks;
 }
 
-double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num, int blk, int MOVE) {
+double rosa_mig(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num, int blk, int MOVE) {
     int i;
     double cost = 0;
     long long int read_count = 0;
@@ -133,16 +145,7 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
     
     if (MOVE == RIA_MIG) {
         // Search NAND block which has max read count
-        for(i = 0; i < metadata->hot_size; i++) {
-            index_blk = metadata->hot_table[i];
-            if((metadata->block_usage[index_blk].log_read_count / metadata->block_usage[index_blk].num_valid) >= max_read_count) {
-                max_read_count = metadata->block_usage[index_blk].log_read_count / metadata->block_usage[index_blk].num_valid;
-                nand_blk = index_blk;
-            }
-        }
-
-        if(nand_blk == -1)
-            return cost;
+        nand_blk = blk;
 #ifdef PAGE_MIG
         for(i = 0; i < s->params.pages_per_block - 1; i++) {
             if (metadata->block_usage[nand_blk].page_read_count[i] >= page_max_read_count && metadata->block_usage[nand_blk].page[i] != -1) {
@@ -340,38 +343,16 @@ double hot_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
     return cost;
 }
 
-double read_disturb_move(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num, int blk, int MOVE) {
+double read_reclaim(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plane_num, int blk) {
     int i;
     double cost = 0;
-    int read_count = 0;
-    int max_read_count = 0;
-    int index_blk = -1;
-    int nand_blk = -1;
+    int nand_blk = blk;
     int nand_lpn = -1;
-
-    // Search NAND block which has max read count
-    for(i = 0; i < metadata->hot_size; i++) {
-        index_blk = metadata->hot_table[i];
-        if(metadata->block_usage[index_blk].num_read_count > max_read_count) {
-            max_read_count = metadata->block_usage[index_blk].num_read_count;
-            nand_blk = index_blk;
-        }
-    }
-
-    if(nand_blk == -1)
-        return cost;
-
-    // Calculate read count    
+    
+    // Initiate physical block read count    
     metadata->block_usage[nand_blk].num_read_count = 0;
 
     s->stat.tot_rd_mig++;
-
-    unsigned int active_page;
-    unsigned int active_block;
-    unsigned int pagepos_in_block;
-    unsigned int active_plane;
-        
-    unsigned int nand_plane;
 
     i = 0;
     do {
@@ -1134,23 +1115,23 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
 #ifdef PAGE_MIG
                     metadata->block_usage[read_block].page_read_count[ppage_pos]++;
 #endif
-                    if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) 
-                        hot_table_add(s, read_block, metadata);
-                    
-                    if(hot_table_full(metadata)) {
+                    if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) { 
+                        if(metadata->block_usage[read_block].num_read_count >= s->params.read_threshold) {
 #ifndef RIA
-                        parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
-                        metadata->block_usage[read_block].erase_cnt++;
+                            parunit_op_cost[i] += read_reclaim(s, metadata, elem_num, r->plane_num, read_block);
+                            metadata->block_usage[read_block].erase_cnt++;
 #else
-                        double hot_migration_cost = hot_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
-                        if(hot_migration_cost != 0)
-                            parunit_op_cost[i] += hot_migration_cost;
-                        else
-                            parunit_op_cost[i] += read_disturb_move(s, metadata, elem_num, r->plane_num, -1, RIA_MIG);
+                            double rosa_mig_cost = rosa_mig(s, metadata, elem_num, r->plane_num, read_block, RIA_MIG);
+                            if(rosa_mig_cost != 0)
+                                parunit_op_cost[i] += rosa_mig_cost;
+                            else
+                                parunit_op_cost[i] += read_reclaim(s, metadata, elem_num, r->plane_num, read_block);
 
-                        metadata->block_usage[read_block].erase_cnt++;
+                            metadata->block_usage[read_block].erase_cnt++;
 #endif
-                        hot_table_clean(s, metadata);
+                        } else {
+                            rosa_table_add(s, read_block, metadata);
+                        }
                     }
 
                     if(metadata->block_usage[read_block].nBlocktype == NAND_TYPE) {
@@ -1166,7 +1147,6 @@ static double ssd_issue_overlapped_ios(ssd_req **reqs, int total, int elem_num, 
                         parunit_op_cost[i] += s->params.pcm_read_latency;
                         s->stat.tot_pcm_read_count ++;
                     }
-
 #else
                     parunit_op_cost[i] = s->params.page_read_latency;
 #endif

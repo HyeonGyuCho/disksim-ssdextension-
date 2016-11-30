@@ -229,11 +229,11 @@ void ssd_element_metadata_init(int elem_number, ssd_element_metadata *metadata, 
     }
 
 #ifdef PN_SSD
-    metadata->hot_size = 1; // pcm_usable_blocks / 10;
+    metadata->rosa_table_size = 1; // pcm_usable_blocks / 10;
 
-    metadata->hot_table = (int *)malloc(metadata->hot_size * sizeof(int));
-    for(i = 0; i < metadata->hot_size; i++) {
-        metadata->hot_table[i] = -1;
+    metadata->rosa_table = (int *)malloc(metadata->rosa_table_size * sizeof(int));
+    for(i = 0; i < metadata->rosa_table_size; i++) {
+        metadata->rosa_table[i] = -1;
     }
     
     metadata->pcm_avg_read_count  = 0;

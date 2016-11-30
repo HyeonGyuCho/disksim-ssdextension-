@@ -67,7 +67,7 @@ static double ssd_move_page(int lpn, int from_blk, int plane_num, int elem_num, 
             ASSERT(metadata->plane_meta[plane_num].active_page == metadata->active_page);
 #ifdef RIA
             if (clean_req == RIA_GC) {
-                cost += hot_move(s, metadata, elem_num, plane_num, from_blk, clean_req);
+                cost += rosa_mig(s, metadata, elem_num, plane_num, from_blk, clean_req);
                 return cost;
             } else {
                 if (ssd_last_page_in_block(metadata->active_page, s)) {
@@ -106,6 +106,7 @@ static double ssd_clean_one_page (int lp_num, int pp_index, int blk, int plane_n
     double xfer_cost = 0;
 
 #ifdef PN_SSD
+    s->stat.tot_gc_nand_read_count++;
     if (lp_num % 3 == 0)
         cost += s->params.lsb_read_latency;
     else if (lp_num % 3 == 1)
@@ -116,7 +117,6 @@ static double ssd_clean_one_page (int lp_num, int pp_index, int blk, int plane_n
     cost += s->params.page_read_latency;
 #endif
 #ifdef RIA
-    s->stat.tot_gc_nand_read_count++;
     cost += ssd_move_page(lp_num, blk, plane_num, elem_num, s, clean_req);
 #else
     cost += ssd_move_page(lp_num, blk, plane_num, elem_num, s);
@@ -536,10 +536,6 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
     int min_valid = s->params.pages_per_block - 1; // one page goes for the summary info
     listnode *greedy_list;
 
-#ifdef PN_SSD
-    unsigned int max_count = metadata->pcm_avg_read_count;
-#endif
-
     *mcost = 0;
 
     // find the average life time of all the blocks in this element
@@ -566,20 +562,16 @@ static int ssd_pick_block_to_clean2(int plane_num, int elem_num, double *mcost, 
                 }
 #ifdef RIA
             } else {
-                if (metadata->block_usage[i].num_valid <= (s->params.pages_per_block / s->params.ria_gc_trigger)) {
-                    if(metadata->block_usage[i].num_valid != 0){
-                        if ((metadata->block_usage[i].log_read_count / metadata->block_usage[i].num_valid) > max_count) {
-                            ASSERT(i == metadata->block_usage[i].block_num);
-                            //ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
-                            max_count = metadata->block_usage[i].log_read_count;
-                            block = i;
-                        } 
+                int rosa_index, blk_index = -1;
+                long long int max_read = metadata->pcm_avg_read_count;
+                long long int ref_count = 0;
+                for(rosa_index = 0; rosa_index < metadata->rosa_table_size; rosa_index++) {
+                    blk_index = metadata->rosa_table[rosa_index];
+                    ref_count = metadata->block_usage[blk_index].log_read_count / metadata->block_usage[blk_index].num_valid;
+                    if(ref_count > max_read) {
+                        max_read = ref_count;
+                        block = blk_index;
                     }
-                   /* else {
-                        ASSERT(i == metadata->block_usage[i].block_num);
-                        ll_insert_at_head(greedy_list, (void*)&metadata->block_usage[i]);
-                        block = i;
-                    }*/
                 }
             }
 #endif
@@ -1108,10 +1100,13 @@ double ssd_clean_element_copyback(int elem_num, ssd_t *s)
     for (i = 0; i < SSD_PARUNITS_PER_ELEM(s); i ++) {
         if ((plane_to_clean[i] = ssd_start_cleaning_parunit(i, elem_num, s)) != -1) {
 #ifdef RIA
-            if (s->elements[elem_num].metadata.tot_free_blocks <= (int)LOW_WATERMARK_PER_PLANE(s))
+            if (s->elements[elem_num].metadata.tot_free_blocks <= (int)LOW_WATERMARK_PER_PLANE(s)) {
                 clean_req = NORMAL_GC;
-            else  
-                clean_req = RIA_GC;
+            } else { 
+                if (rosa_table_full(metadata)) { 
+                    clean_req = RIA_GC;
+                }
+            }
             //else if(!hot_table_empty(metadata))
             //    clean_req = RIA_GC;
 #else
