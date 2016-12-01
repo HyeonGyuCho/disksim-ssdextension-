@@ -25,7 +25,7 @@ extern struct device_header ssd_hdr_initializer;
 #define SSD_BITS_ELEMS_PER_GANG     8
 
 #define PN_SSD                      
-#define RIA
+//#define RIA
 
 //#define RIA2
 //#define READ_DISTURB

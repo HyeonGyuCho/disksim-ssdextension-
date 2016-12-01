@@ -340,6 +340,12 @@ double rosa_mig(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int plan
 #endif 
         }
     } while(++i < s->params.pages_per_block - 1);
+
+    if (metadata->block_usage[nand_blk].num_valid == 0) {
+        cost += s->params.block_erase_latency;
+        ssd_update_free_block_status(nand_blk, nand_plane, metadata, s);
+        ssd_update_block_lifetime(simtime+cost, nand_blk, metadata);
+    }
     return cost;
 }
 
@@ -381,6 +387,13 @@ double read_reclaim(ssd_t *s, ssd_element_metadata *metadata, int elem_num, int 
             cost += _ssd_write_page_osr(s, metadata, nand_lpn);
         }
     } while(++i < s->params.pages_per_block - 1);
+
+    if (metadata->block_usage[nand_blk].num_valid == 0) {
+        cost += s->params.block_erase_latency;
+        ssd_update_free_block_status(nand_blk, plane_num, metadata, s);
+        ssd_update_block_lifetime(simtime+cost, nand_blk, metadata);
+    }
+ 
     return cost;
 }
 #endif
